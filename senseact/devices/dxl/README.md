@@ -45,8 +45,6 @@ If you are using a Robotis USB2Dynamixel device:
  sudo chmod a+rw /dev/ttyUSB0
 ```
 
-There are plenty of examples specified within the `senseact/lib/DynamixelSDK/python/protocol1_0/` folder.
-
 Executing a chmod command to access the serial device every time we connect a serial device is annoying
 to say the least. In order to allow a non-default user to use serial device, all we need to do is add the
 user to the `dialout` group:
@@ -56,6 +54,8 @@ sudo adduser user_name dialout
 ```
 
 However, for this change to take effect, the user has to logout and then login again.
+
+Python examples of interacting with a Dynamixel are in the `senseact/lib/DynamixelSDK/python/protocol1_0/` folder (after `setup_dxl.sh` has run).
 
 # Additional resources
 Please note that this is not meant to be an exhaustive resource. We found the following links to be useful for
