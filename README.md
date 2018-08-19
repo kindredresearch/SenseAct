@@ -26,12 +26,23 @@ Mahmood et al. (2018b) provides extensive results comparing multiple reinforceme
 
 # Installation
 
-SenseAct uses Python3 (>=3.5), and all other requirements are automatically installed via pip.
+SenseAct uses Python3 (>=3.5).
 
 On Linux and Mac OS X, run the following:
 1. `git clone https://github.com/kindredresearch/SenseAct.git`
 1. `cd SenseAct`
 1. `pip install -e .` or `pip3 install -e .` depends on your setup
+
+Additionally on Ubuntu, another package is needed:
+
+1. `sudo apt-get install python3-tk`
+
+The example experiments use the OpenAI Baselines implementation of Proximal Policy Optimization ([PPO](https://arxiv.org/abs/1707.06347)) for learning. To install baselines run:
+
+```
+sudo apt-get install cmake libopenmpi-dev python3-dev zlib1g-dev
+pip install baselines==0.1.5
+```
 
 ### Additional installation steps for Dynamixel-based tasks (Linux only)
 
@@ -95,9 +106,7 @@ while True:
         env.reset()
 ```
 
-More examples are provided in the `examples` directory. The example scripts use the OpenAI Baslines
-implementation of Proximal Policy Optimization ([PPO](https://arxiv.org/abs/1707.06347)) for learning. To install
-baselines, simply run `pip install baselines==0.1.5`. Our environment classes
+More examples are provided in the `examples` directory. Our environment classes
 are also [rllab](https://github.com/rll/rllab) compatible. For example, passing `rllab_box=True` as an argument to the
 ReacherEnv makes it rllab compatible. Rllab uses object oriented abstractions for different
 components required for their experiments. The environment should be constructed with the corresponding objects provided
@@ -117,7 +126,19 @@ In SenseAct, communicators and an environment interact with each other in the fo
 
 The computations of the environment class are distributed among two processes: the experiment process and the task manager process as depicted above.
 
+# Using SenseAct in Simulation
+
 We provide an example of using a SenseAct task based on a simulated robot in `examples/sim_double_pendulum.py` so that the inner workings of SenseAct can be understood without requiring a real robot. The simulated robot is based on the [Double Inverted Pendulum environment](https://gym.openai.com/envs/InvertedDoublePendulum-v2/) from OpenAI Gym. The Gym environment is run asynchronously in a separate process than SenseAct processes, emulating how a real robot would work and be interfaced.
+
+### Installation steps for simulation
+
+The simulation requires OpenAI Baselines (see installation section [above](#installation)) and a popular physics simulator called MuJoCo. First install the prerequisites for MuJoCo:
+
+```
+sudo apt-get install patchelf libgl1-mesa-dev libgl1-mesa-glx libglew-dev libosmesa6-dev
+```
+
+Then install MuJoCo according to their [install guide](https://github.com/openai/mujoco-py#install-mujoco).
 
 # Adding new tasks and robots
 
