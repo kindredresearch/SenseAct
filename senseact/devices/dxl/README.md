@@ -10,7 +10,8 @@ for half duplex UART serial communication. The motors are driven by sending and 
 We used a Xevelabs USB2AX v3.2a USB to TTL Dynamixel servo interface for connecting the motors to the computer.
 
 # Setting the Baudrate and Device ID
-The easiest way to configure a DXL device is via the [Dynamixel Wizard](http://support.robotis.com/en/software/roboplus/dynamixel_monitor.htm).
+
+The easiest way to configure a Dynamixel device, especially if you don't know the baudrate or device ID, is via the [RoboPlus Dynamixel Wizard](http://support.robotis.com/en/software/roboplus/dynamixel_monitor.htm) ([download here](http://en.robotis.com/service/downloadpage.php?ca_id=10)). There is a search tool which scans all possible bauds and and IDs.
 Unfortunately, the software is supported only on Windows. That said, we could also configure the device
 using our custom python script:
 
@@ -22,7 +23,6 @@ to change the baudrate and device ID number to 1 million and 9 respectively.
 ```python
 write_to_register('baud', 1000000)
 write_to_register('bus_id', 9)
-
 ```
 
  We also recommend setting the [Return Delay Time](http://support.robotis.com/en/product/actuator/dynamixel/mx_series/mx-64at_ar.htm#Actuator_Address_05)
@@ -97,7 +97,7 @@ ValueError: 0
 ```
 
 If you see this error message, it is highly likely that you are using the wrong baudrate or device ID number
-to establish a serial connection with your DXL device.
+to establish a serial connection with your DXL device. You may want to find the correct values using the [RoboPlus Dynamixel Wizard](http://support.robotis.com/en/software/roboplus/dynamixel_monitor.htm) ([download here](http://en.robotis.com/service/downloadpage.php?ca_id=10)) for its search tool to scan all possible bauds and and IDs. Although the tool is Windows only.
 
 ## IOError
 If you are unable to establish a serial connection with your DXL, try running this command and then try to
