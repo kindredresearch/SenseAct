@@ -101,6 +101,10 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
     ax1.set_ylabel("Y")
     ax2 = fig.add_subplot(122)
     hl11, = ax2.plot([], [])
+    fig.suptitle("DXL Tracker", fontsize=14)
+    ax2.set_title("Learning Curve")
+    ax2.set_xlabel("Time Step")
+    ax2.set_ylabel("Average Reward")
     count = 0
 
     old_size = len(shared_returns['episodic_returns'])
@@ -111,7 +115,7 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
         hl2.set_xdata([env._present_pos_[-1]])
         ax1.set_ylim([0, 2])
         ax1.set_xlim([env.angle_low, env.angle_high])
-        ax1.set_title("reward: " + str(env._reward_.value))
+        ax1.set_title("Current Reward: " + str(env._reward_.value))
         ax1.set_xlim(ax1.get_xlim()[::-1])
         ax1.set_ylim(ax1.get_ylim()[::-1])
 
