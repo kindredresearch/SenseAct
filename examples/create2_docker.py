@@ -1,3 +1,5 @@
+import os
+import datetime
 import time
 import copy
 import numpy as np
@@ -192,6 +194,11 @@ def plot_create2_docker(env, batch_size, shared_returns, plot_running):
         plt.tight_layout(rect=[0, 0.01, 1, 0.99])
 
         count += 1
+
+    # Save plot to disk
+    now_date_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    os.makedirs('saved_figures', exist_ok=True)
+    plt.savefig('saved_figures/learning_curve_creater2_docker_%s.png' % now_date_str)
 
 
 if __name__ == '__main__':
