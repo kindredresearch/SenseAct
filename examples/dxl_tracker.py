@@ -104,7 +104,7 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
     fig.suptitle("DXL Tracker", fontsize=14)
     ax2.set_title("Learning Curve")
     ax2.set_xlabel("Time Step")
-    ax2.set_ylabel("Average Reward")
+    ax2.set_ylabel("Average Returns")
     count = 0
 
     old_size = len(shared_returns['episodic_returns'])
