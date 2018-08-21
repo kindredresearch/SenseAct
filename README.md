@@ -83,7 +83,7 @@ env = ReacherEnv(
 env.start()
 ```
 After this we can use UR5 Reacher environment object as a regular Gym environment.
- For example, the  code below will run a random agent:
+ For example, the code below will run a random agent:
 
 ```python
 import numpy as np
@@ -95,7 +95,7 @@ while True:
         env.reset()
 ```
 
-More examples are provided in the `examples` directory. The example scripts use the OpenAI Baslines
+More examples are provided in the `examples` directory. The example scripts use the OpenAI Baselines
 implementation of Proximal Policy Optimization ([PPO](https://arxiv.org/abs/1707.06347)) for learning. To install
 baselines, simply run `pip install baselines==0.1.5`. Our environment classes
 are also [rllab](https://github.com/rll/rllab) compatible. For example, passing `rllab_box=True` as an argument to the
@@ -119,10 +119,12 @@ The computations of the environment class are distributed among two processes: t
 
 We provide an example of using a SenseAct task based on a simulated robot in `examples/sim_double_pendulum.py` so that the inner workings of SenseAct can be understood without requiring a real robot. The simulated robot is based on the [Double Inverted Pendulum environment](https://gym.openai.com/envs/InvertedDoublePendulum-v2/) from OpenAI Gym. The Gym environment is run asynchronously in a separate process than SenseAct processes, emulating how a real robot would work and be interfaced.
 
+
+
 # Adding new tasks and robots
 
 In order to add a new physical robot task to SenseAct, one needs to implement a 'communicator' class
-facilitating communciation with the robot and an 'environment' class defining the task.
+facilitating communication with the robot and an 'environment' class defining the task.
 The roles of communicators and environments are described in 'Understanding SenseAct' section.
 
 ### Implementing a communicator
@@ -164,7 +166,7 @@ class Communicator(Process):
 The `_sensor_handler` method is responsible for receiving sensory packets from
 the robot, processing them into a numerical array and writing into a `sensor_buffer`, which is an object of [SharedBuffer](senseact/sharedbuffer.py).
 
-For example  `_sensor_handler` method in the `URCommunicator` class receives packets from the
+For example `_sensor_handler` method in the `URCommunicator` class receives packets from the
 socket object and converts them into a numpy array:
 
 ```python
@@ -178,7 +180,7 @@ def _sensor_handler(self):
 
 The `_actuation_handler` method is responsible for reading actions from `actuator_buffer`, another `SharedBuffer` object, converting them into proper actuation commands and sending them to the robot.
 
-For example, the following fragment of  `_actuation_handler` code in the URCommunicator class converts actions into `servoJ` UR5 commands and sends them over the socket connection:
+For example, the following fragment of `_actuation_handler` code in the URCommunicator class converts actions into `servoJ` UR5 commands and sends them over the socket connection:
 
 ```python
 def _actuation_handler(self):
@@ -303,7 +305,7 @@ The `_compute_sensation_` method converts (a history of) sensory data into an ob
 
 The `_compute_actuation_` method converts an action produced by an RL agent into a numpy array representation of a corresponding actuation command and stores it into an `_actuation_packet_` dictionary, which has the format {communicator_string_name: actuation_numpy_array, ...}.
 
-The `_reset_` method defines and executes the end of an episode reset function for a given task. For example, in UR5 Reacher reset moves the arm into a fixed initial position,  therefore the `_reset_` method sends corresponding `moveL` UR5 command to `URCommunicator` and sleeps sufficient amount of time for the command to be executed on a robot.
+The `_reset_` method defines and executes the end of an episode reset function for a given task. For example, in UR5 Reacher reset moves the arm into a fixed initial position, therefore the `_reset_` method sends corresponding `moveL` UR5 command to `URCommunicator` and sleeps sufficient amount of time for the command to be executed on a robot.
 
 # Citing SenseAct
 
