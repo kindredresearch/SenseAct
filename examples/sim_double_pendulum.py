@@ -78,6 +78,10 @@ def plot_returns(env, batch_size, shared_returns, plot_running):
     fig = plt.figure(figsize=(20, 6))
     ax = fig.add_subplot(111)
     hl11, = ax.plot([], [])
+    fig.suptitle("Simulated Double Pendulum", fontsize=14)
+    ax.set_title("Learning Curve")
+    ax.set_xlabel("Time Step")
+    ax.set_ylabel("Average Returns")
     count = 0
     old_size = len(shared_returns['episodic_returns'])
     returns = []
