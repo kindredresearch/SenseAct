@@ -23,6 +23,7 @@ class DoubleInvertedPendulumEnv(RTRLBaseEnv, gym.core.Env):
                  agent_dt=0.01,
                  sensor_dt=[0.001, 0.001],
                  gym_dt=0.001,
+                 is_render=False,
                  **kwargs
                 ):
         """Inits DoubleInvertedPendulumEnv class with task and communication specific parameters.
@@ -37,6 +38,7 @@ class DoubleInvertedPendulumEnv(RTRLBaseEnv, gym.core.Env):
         self.agent_dt = agent_dt
         self.gym_dt = gym_dt
         self.sensor_dt = sensor_dt
+        self.is_render = is_render
         from gym.envs.registration import register
         register(
             id='SimDoublePendulum-v0',
@@ -235,7 +237,8 @@ class DoubleInvertedPendulumEnv(RTRLBaseEnv, gym.core.Env):
         #Define Simulator object
         self.simulator = GymSimulator(self.env,
                                       gym_dt=0.001,
-                                      sensor_dt=self.sensor_dt
+                                      sensor_dt=self.sensor_dt,
+                                      is_render=self.is_render,
                                      )
 
         #start simulator as a separate process

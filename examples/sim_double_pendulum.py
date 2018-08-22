@@ -12,6 +12,7 @@ def main():
     #Create Asynchronous Simulation of InvertedDoublePendulum-v2 mujoco environment.
     env = DoubleInvertedPendulumEnv(agent_dt=0.005,
                                     sensor_dt=[0.01, 0.0033333],
+                                    is_render=False,
                                    )
     # Start environment processes
     env.start()
