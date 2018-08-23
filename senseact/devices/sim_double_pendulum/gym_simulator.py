@@ -24,6 +24,7 @@ class GymSimulator():
             env: mujoco or openaigym environment object.
             gym_dt: Time step length associated with gym environment cycle.
             sensor_dt: List of time steps assocaited with each sensor cycle.
+            is_render: Flag that renders the simulation if set to True
         """
         self.initialize_buffer_variables()
         self.env = env
@@ -32,13 +33,6 @@ class GymSimulator():
         self.sim_action_dim = len(self.env.action_space.low)
         self.observation_dim = len(self.env.observation_space.low)
         self.is_render = is_render
-        """Inits GymSimulator class with task and communication specific parameters.
-        
-        Args:
-           env: mujoco or openaigym environment object.
-           gym_dt: Time step length associated with gym environment cycle.
-           sensor_dt: List of time steps assocaited with each sensor cycle.
-        """
 
         #Starts process for each sensor (asynchronous updates to simulate real-world communications)
         robot_buffer_list = [self.sim_cart_obs_buffer, self.sim_rod_obs_buffer]
@@ -62,7 +56,8 @@ class GymSimulator():
                 at a given timestep sensor_dt.
             gym_buffer: buffer used to publish the observations at a given timestep
                 gym_dt.
-            obs_index: Observation index associated with particular sensor.
+            obs_index: Observation index (or list of indices) associated with the
+                particular sensor.
         """
         #read value from gym buffer
         value, _, _ = gym_buffer.read()
@@ -74,11 +69,13 @@ class GymSimulator():
         """Runs as separate process. Update rl_buffer for a given sensor at a desired frequency.
 
         Args:
+            sensor_dt: timestep for this particular sensor
             robot_buffer_list: buffer used to update the observations for a sensor
                 at a given timestep sensor_dt.
             gym_buffer: buffer used to publish the observations at a given timestep
                 gym_dt.
-            obs_index: Observation index associated with particular sensor.
+            obs_index: Observation index (or list of indices) associated with the
+                particular sensor.
         """
         time_last_update = time.time()
         while True:
