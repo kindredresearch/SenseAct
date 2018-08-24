@@ -30,8 +30,8 @@ class DoubleInvertedPendulumEnv(RTRLBaseEnv, gym.core.Env):
 
         Args:
             agent_dt: Time step length associated with agent cycle.
-            gym_dt: List of time steps associated with each sensor cycle.
-            sensor_dt: Time step length associated with gym environment cycle.
+            sensor_dt: List of time steps associated with each sensor cycle.
+            gym_dt: Time step length associated with gym environment cycle.
                        This should match the dt increment set in openai gym.
             **kwargs: Keyword arguments
         """
@@ -236,7 +236,7 @@ class DoubleInvertedPendulumEnv(RTRLBaseEnv, gym.core.Env):
         """Starts gym simulator as in independent process that simulates the real world running in real-time."""
         #Define Simulator object
         self.simulator = GymSimulator(self.env,
-                                      gym_dt=0.001,
+                                      gym_dt=self.gym_dt,
                                       sensor_dt=self.sensor_dt,
                                       is_render=self.is_render,
                                      )
