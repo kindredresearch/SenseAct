@@ -221,9 +221,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # TODO: is there a nicer way to do this?
         if rllab_box:
             from rllab.spaces import Box as RlBox  # use this for rllab TRPO
-            from rllab.envs.env_spec import EnvSpec
             Box = RlBox
-            self._spec = EnvSpec(self.observation_space, self.action_space)
         else:
             from gym.spaces import Box as GymBox  # use this for baselines algos
             Box = GymBox
@@ -246,6 +244,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._action_space = Box(low=self._action_low, high=self._action_high)
 
+        if rllab_box:
+            from rllab.envs.env_spec import EnvSpec
+            self._spec = EnvSpec(self.observation_space, self.action_space)
 
         # Only used with second derivative control
         self._first_deriv_ = np.zeros(len(self.action_space.low))

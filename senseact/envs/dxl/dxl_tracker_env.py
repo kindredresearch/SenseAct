@@ -99,9 +99,7 @@ class DxlTracker1DEnv(RTRLBaseEnv, gym.core.Env):
 
         if rllab_box:
             from rllab.spaces import Box as RlBox  # use this for rllab TRPO
-            from rllab.envs.env_spec import EnvSpec
             Box = RlBox
-            self._spec = EnvSpec(self.observation_space, self.action_space)
         else:
             from gym.spaces import Box as GymBox  # use this for baselines algos
             Box = GymBox
@@ -172,6 +170,10 @@ class DxlTracker1DEnv(RTRLBaseEnv, gym.core.Env):
             )
         )
         self._action_space = Box(low=self.action_low, high=self.action_high)
+
+        if rllab_box:
+            from rllab.envs.env_spec import EnvSpec
+            self._spec = EnvSpec(self.observation_space, self.action_space)
 
         self._comm_name = 'DxlTracker1D'
         self._dxl_dev_path = dxl_dev_path
