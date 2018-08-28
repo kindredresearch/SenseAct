@@ -1,24 +1,27 @@
-import time
+import argparse
 import copy
-
-import numpy as np
-import baselines.common.tf_util as U
-
-from baselines.trpo_mpi.trpo_mpi import learn
-from baselines.ppo1.mlp_policy import MlpPolicy
-from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
-from senseact.utils import NormalizedEnv
 from multiprocessing import Process, Value, Manager
+
+import baselines.common.tf_util as U
+import numpy as np
+import time
+from baselines.ppo1.mlp_policy import MlpPolicy
+from baselines.trpo_mpi.trpo_mpi import learn
 from helper import create_callback
 
-def main():
+from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
+from senseact.utils import NormalizedEnv
+
+
+def main(port, id, baud):
     # Create DXL Reacher1D environment
     env = DxlReacher1DEnv(setup='dxl_gripper_default',
-                          idn=1,
-                          baudrate=1000000,
+                          dxl_dev_path=port,
+                          idn=id,
+                          baudrate=baud,
                           obs_history=1,
-                          dt=0.04,
-                          gripper_dt=0.01,
+                          dt=0.05,
+                          gripper_dt=0.04,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -41,9 +44,10 @@ def main():
     # Create baselines trpo policy function
     sess = U.single_threaded_session()
     sess.__enter__()
+
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+                         hid_size=32, num_hid_layers=2)
 
     # create and start plotting process
     plot_running = Value('i', 1)
@@ -155,5 +159,12 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
         fig.canvas.flush_events()
         count += 1
 
+
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=str, default="/dev/ttyACM*")
+    parser.add_argument("--id", type=int, default=1)
+    parser.add_argument("--baud", type=int, default=1000000)
+    args = parser.parse_args()
+
+    main(**args.__dict__)
