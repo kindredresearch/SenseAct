@@ -11,6 +11,8 @@ In this computational model, agent and environment-related computations are orde
 
 This repository provides the following real-world robotic tasks, which are proposed by Mahmood et al. (2018b) as benchmark tasks for reinforcement learning algorithms:
 
+![Robots](imgs/figure1_robots.jpg)
+
 ### For Universal-Robots (UR) robotic arms:
 - [UR-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/ur/reacher_env.py) (both 2 joint and 6 joint control)
 
@@ -48,6 +50,10 @@ Then run the following to compile the C code:
 For additional setup and troubleshooting information regarding Dynamixels, please see [DXL Docs](senseact/devices/dxl/README.md).
 
 # Running experiments
+
+One task that is included in the `examples` folder is for the Universal-Robot (UR) arm to learn to reach its finger to a desired target.
+
+![ur5](imgs/ur5.jpg)
 
 All environments in SenseAct inherit from OpenAI Gym base environment class, therefore they support Gym interface. In order to run for example an experiment with the UR-Reacher task, first one needs to create an environment object with parameters specific to the robot used in the experiment and start environment processes:
 
@@ -95,6 +101,18 @@ while True:
         env.reset()
 ```
 
+Or invoke the helper script:
+
+```bash
+$ python3 examples/ur2_reacher.py
+```
+
+This traines an agent and produces live plotting of the current and target locations as well as the growth curve.
+
+![plot](imgs/learning_curve_dxl_tracker.jpg)
+
+
+
 More examples are provided in the `examples` directory. The example scripts use the OpenAI Baselines
 implementation of Proximal Policy Optimization ([PPO](https://arxiv.org/abs/1707.06347)) for learning. To install
 baselines, simply run `pip install baselines==0.1.5`. Our environment classes
@@ -113,7 +131,7 @@ Any information the environment class and the agent need to know about the robot
 On the other hand, the 'environment' class fleshes out the reinforcement learning task specification by defining the observation space, the action space and the reward function among other things, based only on the sensorimotor information available from communicators.
 In SenseAct, communicators and an environment interact with each other in the following way:
 
-![SenseAct](SenseAct.png)
+![SenseAct](imgs/SenseAct.png)
 
 The computations of the environment class are distributed among two processes: the experiment process and the task manager process as depicted above.
 
