@@ -53,7 +53,9 @@ For additional setup and troubleshooting information regarding Dynamixels, pleas
 
 One task that is included in the `examples` folder is for the Universal-Robot (UR) arm to learn to reach its finger to a desired target.
 
-![ur5](imgs/ur5.jpg)
+<p align="center">
+ <img src="imgs/ur5.jpg" alt="UR5" height="250px">
+</p>
 
 All environments in SenseAct inherit from OpenAI Gym base environment class, therefore they support Gym interface. In order to run for example an experiment with the UR-Reacher task, first one needs to create an environment object with parameters specific to the robot used in the experiment and start environment processes:
 
