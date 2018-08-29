@@ -1,3 +1,4 @@
+import argparse
 import time
 import copy
 import numpy as np
@@ -14,9 +15,9 @@ from senseact.utils import NormalizedEnv
 from helper import create_callback
 
 
-def main():
+def main(args):
     # Create the Create2 mover environment
-    env = Create2MoverEnv(90, port='/dev/ttyUSB0', obs_history=1, dt=0.15)
+    env = Create2MoverEnv(90, port=args['port'], obs_history=1, dt=0.15)
     env = NormalizedEnv(env)
 
     # Start environment processes
@@ -192,9 +193,11 @@ def plot_create2_mover(env, batch_size, shared_returns, plot_running):
 
         count += 1
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Trains a Create 2 to drive forwards.')
+    parser.add_argument('-p', '--port', default='/dev/ttyUSB0',
+                        help='port to communicate with Create 2 on')
+    return vars(parser.parse_args())
 
 if __name__ == '__main__':
-    main()
-
-
-
+    main(parse_args())
