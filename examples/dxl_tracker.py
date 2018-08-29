@@ -7,11 +7,16 @@ import baselines.common.tf_util as U
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
 from senseact.envs.dxl.dxl_tracker_env import DxlTracker1DEnv
-from senseact.utils import NormalizedEnv
+from senseact.utils import tf_set_seeds, NormalizedEnv
 from multiprocessing import Process, Value, Manager
 from helper import create_callback
 
 def main():
+    # use fixed random state
+    rand_state = np.random.RandomState(1)
+    np.random.set_state(rand_state.get_state())
+    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+
     # Create DXL Tracker1D environment
     env = DxlTracker1DEnv(setup='dxl_tracker_default',
                           idn=1,
@@ -28,6 +33,7 @@ def main():
                           reset_type='zero',
                           reward_type='linear',
                           use_ctypes_driver=True,
+                          random_state=rand_state
                           )
 
     # The outputs of the policy function are sampled from a Gaussian. However, the actions in terms of torque

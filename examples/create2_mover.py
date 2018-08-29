@@ -10,13 +10,18 @@ from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
 
 from senseact.envs.create2.create2_mover_env import Create2MoverEnv
-from senseact.utils import NormalizedEnv
+from senseact.utils import tf_set_seeds, NormalizedEnv
 from helper import create_callback
 
 
 def main():
+    # use fixed random state
+    rand_state = np.random.RandomState(1)
+    np.random.set_state(rand_state.get_state())
+    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+
     # Create the Create2 mover environment
-    env = Create2MoverEnv(90, port='/dev/ttyUSB0', obs_history=1, dt=0.15)
+    env = Create2MoverEnv(90, port='/dev/ttyUSB0', obs_history=1, dt=0.15, random_state=rand_state)
     env = NormalizedEnv(env)
 
     # Start environment processes
