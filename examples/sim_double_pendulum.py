@@ -13,8 +13,8 @@ from multiprocessing import Process, Value, Manager
 
 def main():
     # use fixed random state
-    rand_state = np.random.RandomState(1)
-    np.random.set_state(rand_state.get_state())
+    rand_state = np.random.RandomState(1).get_state()
+    np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2**31 - 1))
 
     #Create Asynchronous Simulation of InvertedDoublePendulum-v2 mujoco environment.
