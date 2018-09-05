@@ -95,9 +95,7 @@ while True:
         env.reset()
 ```
 
-More examples are provided in the `examples` directory. The example scripts use the OpenAI Baselines
-implementation of Proximal Policy Optimization ([PPO](https://arxiv.org/abs/1707.06347)) for learning. To install
-baselines, simply run `pip install baselines==0.1.5`. Our environment classes
+More examples are provided in the `examples` directory.  Our environment classes
 are also [rllab](https://github.com/rll/rllab) compatible. For example, passing `rllab_box=True` as an argument to the
 ReacherEnv makes it rllab compatible. Rllab uses object oriented abstractions for different
 components required for their experiments. The environment should be constructed with the corresponding objects provided
