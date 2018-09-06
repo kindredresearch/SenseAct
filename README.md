@@ -1,12 +1,12 @@
 # SenseAct: A computational framework for real-world robot learning tasks
 
-This repository provides the implementation of several reinforcement learning (RL) tasks with three different real-world robots.
+This repository provides the implementation of several reinforcement learning (RL) tasks with multiple real-world robots.
 These tasks come with an interface similar to [OpenAI-Gym](https://github.com/openai/gym) so that learning algorithms can be plugged in easily and in a uniform manner across tasks.
-All the tasks here are implemented based on a computational model of robot-agent communication proposed by Mahmood et al. (2018a), which we call *SenseAct*.
-In this computational model, agent and environment-related computations are ordered and distributed among multiple concurrent processes in a specific way. By doing so, SenseAct enables the following:
+All the tasks here are implemented based on a computational framework of robot-agent communication proposed by Mahmood et al. (2018a), which we call *SenseAct*.
+In this computational framework, agent and environment-related computations are ordered and distributed among multiple concurrent processes in a specific way. By doing so, SenseAct enables the following:
 
 - Timely communication between the learning agent and multiple robotic devices with reduced latency,
-- Easy and systematic design of robotic tasks for reinforcement learning agents.
+- Easy and systematic design of robotic tasks for reinforcement learning agents,
 - Facilitate reproducible real-world reinforcement learning.
 
 This repository provides the following real-world robotic tasks, which are proposed by Mahmood et al. (2018b) as benchmark tasks for reinforcement learning algorithms:
@@ -22,7 +22,7 @@ This repository provides the following real-world robotic tasks, which are propo
 - [Create-Mover](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_mover_env.py)
 - [Create-Docker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_docker_env.py)
 
-Mahmood et al. (2018b) provides extensive results comparing multiple reinforcement learning algorithms on these tasks. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
+Mahmood et al. (2018b) provide extensive results comparing multiple reinforcement learning algorithms on the above tasks, and Mahmood et al. show the effect of different task-setup elements in learning. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
 
 # Installation
 
