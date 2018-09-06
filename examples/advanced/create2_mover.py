@@ -27,7 +27,7 @@ def main():
     # Start environment processes
     env.start()
 
-    # Create baselines trpo policy function
+    # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -43,7 +43,7 @@ def main():
     pp = Process(target=plot_create2_mover, args=(env, 2048, shared_returns, plot_running))
     pp.start()
 
-    # Create callback function for logging data from baselines PPO learn
+    # Create callback function for logging data from baselines TRPO learn
     kindred_callback = create_callback(shared_returns)
 
     # Train baselines TRPO
