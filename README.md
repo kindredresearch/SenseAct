@@ -22,7 +22,7 @@ This repository provides the following real-world robotic tasks, which are propo
 - [Create-Mover](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_mover_env.py)
 - [Create-Docker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_docker_env.py)
 
-Mahmood et al. (2018b) provide extensive results comparing multiple reinforcement learning algorithms on the above tasks, and Mahmood et al. show the effect of different task-setup elements in learning. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
+Mahmood et al. (2018b) provide extensive results comparing multiple reinforcement learning algorithms on the above tasks, and Mahmood et al. (2018a) show the effect of different task-setup elements in learning. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
 
 # Installation
 
