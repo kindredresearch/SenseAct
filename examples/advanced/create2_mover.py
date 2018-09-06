@@ -9,7 +9,7 @@ from multiprocessing import Process, Value, Manager
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
 
-from senseact.envs.create2.create2_docker_env import Create2DockerEnv
+from senseact.envs.create2.create2_mover_env import Create2MoverEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 from helper import create_callback
 
@@ -20,15 +20,14 @@ def main():
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2**31 - 1))
 
-    # Create the Create2 docker environment
-    env = Create2DockerEnv(30, port='/dev/ttyUSB0', ir_window=20, ir_history=1,
-                           obs_history=1, dt=0.045, random_state=rand_state)
+    # Create the Create2 mover environment
+    env = Create2MoverEnv(90, port='/dev/ttyUSB0', obs_history=1, dt=0.15, random_state=rand_state)
     env = NormalizedEnv(env)
 
     # Start environment processes
     env.start()
 
-    # Create baselines trpo policy function
+    # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -41,10 +40,10 @@ def main():
                                      "episodic_returns": [],
                                      "episodic_lengths": [], })
     # Spawn plotting process
-    pp = Process(target=plot_create2_docker, args=(env, 2048, shared_returns, plot_running))
+    pp = Process(target=plot_create2_mover, args=(env, 2048, shared_returns, plot_running))
     pp.start()
 
-    # Create callback function for logging data from baselines PPO learn
+    # Create callback function for logging data from baselines TRPO learn
     kindred_callback = create_callback(shared_returns)
 
     # Train baselines TRPO
@@ -69,11 +68,11 @@ def main():
     env.close()
 
 
-def plot_create2_docker(env, batch_size, shared_returns, plot_running):
+def plot_create2_mover(env, batch_size, shared_returns, plot_running):
     """Helper process for visualize the learning curve and observations.
 
     Args:
-        env: An instance of Create2DockerEnv
+        env: An instance of Create2MoverEnv
         batch_size: An int representing timesteps_per_batch provided to the PPO learn function
         shared_returns: A manager dictionary object containing `episodic returns` and `episodic lengths`
         plot_running: A multiprocessing Value object containing 0/1.
@@ -201,3 +200,6 @@ def plot_create2_docker(env, batch_size, shared_returns, plot_running):
 
 if __name__ == '__main__':
     main()
+
+
+
