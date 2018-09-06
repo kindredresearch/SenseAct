@@ -8,7 +8,7 @@ Run [basic/sim_double_pendulum.py](basic/sim_double_pendulum.py) to start a simp
 
 ### Advance
 
-We also provided examples that use the OpenAI Baselines implementation of Proximal Policy Optimization (PPO) for actual learning. To run these examples, first install the Baselines prerequisites shown on OpenAI Baselines [README](https://github.com/openai/baselines), then install Baselines version 0.1.5 by running `pip install baselines==0.1.5`. Each examples also require its corresponding hardware, with the exception of [advance/sim_double_pendulum.py](advance/sim_double_pendulum.py), which requires mujoco 1.50.
+We also provided examples that use the OpenAI Baselines implementation of Trust Region Policy Optimization (TRPO) and Proximal Policy Optimization (PPO) for actual learning. To run these examples, first install the Baselines prerequisites shown on OpenAI Baselines [README](https://github.com/openai/baselines), then install Baselines version 0.1.5 by running `pip install baselines==0.1.5`. Each examples also require its corresponding hardware, with the exception of [advance/sim_double_pendulum.py](advance/sim_double_pendulum.py), which requires mujoco 1.50.
 
 #### Example list
 * Create2 Docker environment: [advance/create2_docker.py](advance/create2_docker.py)
