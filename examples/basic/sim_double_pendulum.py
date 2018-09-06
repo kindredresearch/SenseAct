@@ -11,19 +11,17 @@ def main():
 
     # Start environment processes
     env.start()
-    env.reset()
 
     # Run 1000 episodes of the environment
     for episode in range(1000):
         done = False
+        obs = env.reset()
 
         # Continue until an episode is done
         while not done:
+            # Sample an action uniformly randomly
             action = np.random.uniform(-1.0, 1.0)
             obs, reward, done, _ = env.step(action)
-
-        # Reset environment for next episode
-        env.reset()
 
     # Shutdown the environment
     env.close()
