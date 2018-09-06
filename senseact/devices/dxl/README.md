@@ -64,15 +64,16 @@ However, for this change to take effect, the user has to logout and then login a
 - `cd ~/SenseAct` && `rm -rf senseact/lib/DynamixelSDK`
 - And then run `bash setup_dxl.sh` to reinstall DynamixelSDK.
 
-If the `lib/DynamixelSDK` directory was removed before `sudo make uninstall`, follow the instructions below:
-- The setup script copies the library file to the root directory to habdle the serial post. Hence, we need to remove some files from `/usr/local`.
-```bash
-rm /usr/local/lib_dxl_x64_c.so
-rm /usr/local/lib_dxl_x64_c.so.2
-rm /usr/local/lib_dxl_x64_c.so.2.0
-rm /usr/local/lib_dxl_x64_c.so.2.0.0
-rm /usr/local/include/dynamixel_sdk.h
-```
+If the `lib/DynamixelSDK` directory was removed before `sudo make uninstall`, follow the instructions listed below. The setup script copies the library file to the root directory to habdle the serial post. Hence, we need to remove some files from `/usr/local`:
+
+ ```bash
+ # Only needed if "lib/DynamixelSDK" directory was removed before "sudo make uninstall"
+ rm /usr/local/lib_dxl_x64_c.so
+ rm /usr/local/lib_dxl_x64_c.so.2
+ rm /usr/local/lib_dxl_x64_c.so.2.0
+ rm /usr/local/lib_dxl_x64_c.so.2.0.0
+ rm /usr/local/include/dynamixel_sdk.h
+ ```
 
 # Additional resources
 Please note that this is not meant to be an exhaustive resource. We found the following links to be useful for
