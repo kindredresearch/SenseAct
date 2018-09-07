@@ -11,14 +11,14 @@ In this computational framework, agent and environment-related computations are 
 
 This repository provides the following real-world robotic tasks, which are proposed by Mahmood et al. (2018b) as benchmark tasks for reinforcement learning algorithms:
 
-### For Universal-Robots (UR) robotic arms:
+### Universal-Robots (UR) robotic arms:
 - [UR-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/ur/reacher_env.py) (both 2 joint and 6 joint control)
 
-### For Dynamixel (DXL) actuators:
+### Dynamixel (DXL) actuators:
 - [DXL-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_reacher_env.py)
 - [DXL-Tracker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_tracker_env.py)
 
-### For iRobot Create 2 robots:
+### iRobot Create 2 robots:
 - [Create-Mover](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_mover_env.py)
 - [Create-Docker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_docker_env.py)
 
@@ -49,7 +49,7 @@ Then run the following to compile the C code:
 
 For additional setup and troubleshooting information regarding Dynamixels, please see [DXL Docs](senseact/devices/dxl/).
 
-## Tests
+# Tests
 
 You can check whether SenseAct is installed correctly by running the included unit tests.
 
