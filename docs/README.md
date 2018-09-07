@@ -62,7 +62,7 @@ A SenseAct task comprises implementations of environment and communicator classe
 The communicator class should be implemented on a per-device basis in a generic and task-agnostic way so that it can be reused for different tasks.
 Any information the environment class and the agent need to know about the robot should only go through a communicator.
 On the other hand, the 'environment' class fleshes out the reinforcement learning task specification by defining the observation space, the action space and the reward function among other things, based only on the sensorimotor information available from communicators.
-In SenseAct, communicators and an agent interact with each other in the following way:
+In SenseAct, a communicator and an agent interact with each other in the following way:
 
 ![SenseAct](SenseAct.png)
 
