@@ -30,7 +30,7 @@ class Create2DockerEnv(RTRLBaseEnv, gym.Env):
         """Constructor of the environment.
 
         Args:
-            episode_length_time:  the number of steps per episode
+            episode_length_time:  A float duration of an episode defined in seconds
             port:                 the serial port to the Create2 (eg. '/dev/ttyUSB0')
             ir_window:            the number of IR history to include in calculation
             ir_history:           the number of IR packet history (not observation history)

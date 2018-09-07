@@ -29,7 +29,7 @@ class Create2MoverEnv(RTRLBaseEnv, gym.Env):
         """Constructor of the environment.
 
         Args:
-            episode_length_time: the number of steps per episode
+            episode_length_time: A float duration of an episode defined in seconds
             port:                the serial port to the Create2 (eg. '/dev/ttyUSB0')
             obs_history:         the number of observation history to keep
             dt:                  the cycle time in seconds
