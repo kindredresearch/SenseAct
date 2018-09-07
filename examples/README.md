@@ -20,4 +20,5 @@ Each examples also require its corresponding hardware, with the exception of [ad
 * DXL Reacher environment: [advanced/dxl_reacher.py](advanced/dxl_reacher.py)
 * DXL Tracker environment: [advanced/dxl_tracker.py](advanced/dxl_tracker.py)
 * Double Inverted Pendulum environment: [advanced/sim_double_pendulum.py](advanced/sim_double_pendulum.py)
-* UR5 Reacher environment: [advanced/ur5_reacher.py](advanced/ur5_reacher.py)
+* UR5 Reacher 2D environment: [advanced/ur5_reacher.py](advanced/ur5_reacher.py)
+* UR5 Reacher 6D environment: [advanced/ur5_reacher_6D.py](advanced/ur5_reacher_6D.py)
