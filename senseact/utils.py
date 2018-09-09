@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import collections
 from gym.core import Env
@@ -5,10 +6,13 @@ from gym.core import Env
 Step = collections.namedtuple("Step", ["observation", "reward", "done", "info"])
 
 def get_random_state_array(rand_state):
-    """
-    Create a custom random state numpy array dtype for storing numpy random states.
-    :param rand_state: the random state tuple of a `RandomState` object
-    :return: the custom dtype object, its size, and an array of that dtype
+    """Creates a custom random state numpy array dtype for storing numpy random states.
+
+    Args:
+        rand_state: the random state tuple of a `RandomState` object
+
+    Returns:
+        The custom dtype object, its size, and an array of that dtype
     """
     dtype_list = []
     rand_state_list = []
@@ -35,10 +39,13 @@ def get_random_state_array(rand_state):
 
 
 def get_random_state_from_array(rand_state_array):
-    """
-    Obtain the random state tuple from a custom `rand_state_array_type`
-    :param rand_state_array: an object of numpy array dtype `rand_state_array_type`
-    :return: a numpy RandomState object with state set according to rand_state_array
+    """Obtains the random state tuple from a custom `rand_state_array_type`
+
+    Args:
+        rand_state_array: an object of numpy array dtype `rand_state_array_type`
+
+    Returns:
+        a numpy RandomState object with state set according to rand_state_array
     """
     rand_state_tuple = (
         'MT19937',
@@ -49,6 +56,21 @@ def get_random_state_from_array(rand_state_array):
     )
 
     return rand_state_tuple
+
+
+def tf_set_seeds(seed):
+    """Sets tensorflow seed.
+
+    It is important to note that this seed affects the current default graph only.
+    If you have another graph within the same session, you have to set the random seed
+    within the scope of the "with graph.as_default()" block.
+
+    Args:
+        seed: int value for the seed
+    """
+    import tensorflow as tf
+    tf.set_random_seed(seed)
+    random.seed(seed)
 
 
 class EnvSpec():

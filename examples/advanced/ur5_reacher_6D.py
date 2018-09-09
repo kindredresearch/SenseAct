@@ -1,5 +1,3 @@
-import os
-import datetime
 import time
 import copy
 import numpy as np
@@ -10,16 +8,21 @@ from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
 
 from senseact.envs.ur.reacher_env import ReacherEnv
-from senseact.utils import NormalizedEnv
+from senseact.utils import tf_set_seeds, NormalizedEnv
 from helper import create_callback
 
 
 def main():
+    # use fixed random state
+    rand_state = np.random.RandomState(1).get_state()
+    np.random.set_state(rand_state)
+    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+
     # Create UR5 Reacher2D environment
     env = ReacherEnv(
-            setup="UR5_default",
+            setup="UR5_6dof",
             host=None,
-            dof=2,
+            dof=6,
             control_type="velocity",
             target_type="position",
             reset_type="zero",
@@ -38,17 +41,17 @@ def main():
             rllab_box=False,
             movej_t=2.0,
             delay=0.0,
-            random_state=None
+            random_state=rand_state
         )
     env = NormalizedEnv(env)
     # Start environment processes
     env.start()
-    # Create baselines trpo policy function
+    # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+            hid_size=64, num_hid_layers=2)
 
     # Create and start plotting process
     plot_running = Value('i', 1)
@@ -59,12 +62,12 @@ def main():
     pp = Process(target=plot_ur5_reacher, args=(env, 2048, shared_returns, plot_running))
     pp.start()
 
-    # Create callback function for logging data from baselines PPO learn
+    # Create callback function for logging data from baselines TRPO learn
     kindred_callback = create_callback(shared_returns)
 
     # Train baselines TRPO
     learn(env, policy_fn,
-          max_timesteps=150000,
+          max_timesteps=200000,
           timesteps_per_batch=2048,
           max_kl=0.05,
           cg_iters=10,
@@ -171,11 +174,6 @@ def plot_ur5_reacher(env, batch_size, shared_returns, plot_running):
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
-
-    # Save plot to disk
-    now_date_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    os.makedirs('saved_figures', exist_ok=True)
-    plt.savefig('saved_figures/learning_curve_ur5_reacher_%s.png' % now_date_str)
 
 
 if __name__ == '__main__':
