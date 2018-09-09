@@ -1,18 +1,27 @@
-from baselines.ppo1.pposgd_simple import learn
-from baselines.ppo1.mlp_policy import MlpPolicy
-from senseact.envs.sim_double_pendulum.sim_double_pendulum import DoubleInvertedPendulumEnv
-from helper import create_callback
-from multiprocessing import Process, Value, Manager
-
 import time
 import baselines.common.tf_util as U
 import numpy as np
 
+
+from baselines.ppo1.pposgd_simple import learn
+from baselines.ppo1.mlp_policy import MlpPolicy
+
+from senseact.envs.sim_double_pendulum.sim_double_pendulum import DoubleInvertedPendulumEnv
+from senseact.utils import tf_set_seeds
+from helper import create_callback
+from multiprocessing import Process, Value, Manager
+
 def main():
+    # use fixed random state
+    rand_state = np.random.RandomState(1).get_state()
+    np.random.set_state(rand_state)
+    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+
     #Create Asynchronous Simulation of InvertedDoublePendulum-v2 mujoco environment.
     env = DoubleInvertedPendulumEnv(agent_dt=0.005,
                                     sensor_dt=[0.01, 0.0033333],
                                     is_render=False,
+                                    random_state=rand_state
                                    )
     # Start environment processes
     env.start()
@@ -87,7 +96,6 @@ def plot_returns(env, batch_size, shared_returns, plot_running):
     old_size = len(shared_returns['episodic_returns'])
     returns = []
     while plot_running.value:
-        # print(episodic_returns)
         if count % 20 == 0:
             if len(shared_returns['episodic_returns']) > old_size:
                 returns.append(np.mean(shared_returns['episodic_returns'][-(len(shared_returns['episodic_returns']) - old_size):]))
