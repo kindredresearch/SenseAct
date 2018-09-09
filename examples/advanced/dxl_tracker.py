@@ -7,11 +7,16 @@ import baselines.common.tf_util as U
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
 from senseact.envs.dxl.dxl_tracker_env import DxlTracker1DEnv
-from senseact.utils import NormalizedEnv
+from senseact.utils import tf_set_seeds, NormalizedEnv
 from multiprocessing import Process, Value, Manager
 from helper import create_callback
 
 def main():
+    # use fixed random state
+    rand_state = np.random.RandomState(1).get_state()
+    np.random.set_state(rand_state)
+    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+
     # Create DXL Tracker1D environment
     env = DxlTracker1DEnv(setup='dxl_tracker_default',
                           idn=1,
@@ -28,6 +33,7 @@ def main():
                           reset_type='zero',
                           reward_type='linear',
                           use_ctypes_driver=True,
+                          random_state=rand_state
                           )
 
     # The outputs of the policy function are sampled from a Gaussian. However, the actions in terms of torque
@@ -38,7 +44,7 @@ def main():
     # Start environment processes
     env.start()
 
-    # Create baselines trpo policy function
+    # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -54,7 +60,7 @@ def main():
     pp = Process(target=plot_dxl_tracker, args=(env, 2048, shared_returns, plot_running))
     pp.start()
 
-    # Create callback function for logging data from baselines PPO learn
+    # Create callback function for logging data from baselines TRPO learn
     kindred_callback = create_callback(shared_returns)
 
     # Train baselines TRPO
@@ -101,6 +107,10 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
     ax1.set_ylabel("Y")
     ax2 = fig.add_subplot(122)
     hl11, = ax2.plot([], [])
+    fig.suptitle("DXL Tracker", fontsize=14)
+    ax2.set_title("Learning Curve")
+    ax2.set_xlabel("Time Step")
+    ax2.set_ylabel("Average Returns")
     count = 0
 
     old_size = len(shared_returns['episodic_returns'])
@@ -111,7 +121,7 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
         hl2.set_xdata([env._present_pos_[-1]])
         ax1.set_ylim([0, 2])
         ax1.set_xlim([env.angle_low, env.angle_high])
-        ax1.set_title("reward: " + str(env._reward_.value))
+        ax1.set_title("Current Reward: " + str(env._reward_.value))
         ax1.set_xlim(ax1.get_xlim()[::-1])
         ax1.set_ylim(ax1.get_ylim()[::-1])
 

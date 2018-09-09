@@ -62,9 +62,6 @@ class RTRLBaseEnv(object):
                 resolution is typically ~0.001s, for Windows based OSes its ~0.01s.
             busy_loop: a boolean specifying whether to use busy loops instead
                 of time.sleep() to accurately maintain short real time intervals.
-            random_state: a numpy random state object to use for generating
-                random sequences
-
         """
         assert run_mode in ['singlethread', 'multithread', 'multiprocess']
         self._run_mode = run_mode
