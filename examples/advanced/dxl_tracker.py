@@ -6,7 +6,7 @@ import baselines.common.tf_util as U
 
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
-from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
+from senseact.envs.dxl.dxl_tracker_env import DxlTracker1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 from multiprocessing import Process, Value, Manager
 from helper import create_callback
@@ -17,8 +17,8 @@ def main():
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2**31 - 1))
 
-    # Create DXL Reacher1D environment
-    env = DxlReacher1DEnv(setup='dxl_gripper_default',
+    # Create DXL Tracker1D environment
+    env = DxlTracker1DEnv(setup='dxl_tracker_default',
                           idn=1,
                           baudrate=1000000,
                           obs_history=1,
@@ -26,8 +26,8 @@ def main():
                           gripper_dt=0.01,
                           rllab_box=False,
                           episode_length_step=None,
-                          episode_length_time=2,
-                          max_torque_mag=100,
+                          episode_length_time=4,
+                          max_torque_mag = 50,
                           control_type='torque',
                           target_type='position',
                           reset_type='zero',
@@ -44,7 +44,7 @@ def main():
     # Start environment processes
     env.start()
 
-    # Create baselines trpo policy function
+    # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -57,15 +57,15 @@ def main():
                                      "episodic_returns": [],
                                      "episodic_lengths": [], })
     # Plotting process
-    pp = Process(target=plot_dxl_reacher, args=(env, 2048, shared_returns, plot_running))
+    pp = Process(target=plot_dxl_tracker, args=(env, 2048, shared_returns, plot_running))
     pp.start()
 
-    # Create callback function for logging data from baselines PPO learn
+    # Create callback function for logging data from baselines TRPO learn
     kindred_callback = create_callback(shared_returns)
 
     # Train baselines TRPO
     learn(env, policy_fn,
-          max_timesteps=50000,
+          max_timesteps=150000,
           timesteps_per_batch=2048,
           max_kl=0.05,
           cg_iters=10,
@@ -85,12 +85,11 @@ def main():
     # Shutdown the environment
     env.close()
 
-
-def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
-    """ Visualizes the DXL reacher task and plots episodic returns
+def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
+    """ Visualizes the DXL tracker task and plots episodic returns
 
     Args:
-        env: An instance of DxlReacher1DEnv
+        env: An instance of DxlTracker1DEnv
         batch_size: An int representing timesteps_per_batch provided to the PPO learn function
         shared_returns: A manager dictionary object containing `episodic returns` and `episodic lengths`
         plot_running: A multiprocessing Value object containing 0/1.
@@ -108,7 +107,7 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
     ax1.set_ylabel("Y")
     ax2 = fig.add_subplot(122)
     hl11, = ax2.plot([], [])
-    fig.suptitle("DXL Reacher", fontsize=14)
+    fig.suptitle("DXL Tracker", fontsize=14)
     ax2.set_title("Learning Curve")
     ax2.set_xlabel("Time Step")
     ax2.set_ylabel("Average Returns")
@@ -163,3 +162,6 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
 
 if __name__ == '__main__':
     main()
+
+
+

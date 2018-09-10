@@ -96,7 +96,6 @@ def plot_returns(env, batch_size, shared_returns, plot_running):
     old_size = len(shared_returns['episodic_returns'])
     returns = []
     while plot_running.value:
-        # print(episodic_returns)
         if count % 20 == 0:
             if len(shared_returns['episodic_returns']) > old_size:
                 returns.append(np.mean(shared_returns['episodic_returns'][-(len(shared_returns['episodic_returns']) - old_size):]))
