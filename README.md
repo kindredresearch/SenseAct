@@ -58,6 +58,12 @@ cd SenseAct
 python -m unittest discover -b
 ```
 
+# Acknowledgments
+
+This project is developed by the [Kindred](https://www.kindred.ai/) AI Research team. [Rupam Mahmood](https://github.com/armahmood), [Dmytro Korenkevych](https://github.com/dkorenkevych), and [Brent Komer](https://github.com/bjkomer) originally developed the computational framework and the UR tasks. [William Ma](https://github.com/williampma) developed the Create 2 tasks and contributed substantially by adding new features to SenseAct. [Gautham Vasan](https://github.com/gauthamvasan) developed the DXL tasks. [Francois Hogan](https://github.com/fhogan) developed the simulated task.
+
+[James Bergstra](https://github.com/jaberg) provided substantial support and guidance throughout the development. [Adrian Martin](https://github.com/adrianheron), [Scott Rostrup](https://github.com/sarostru), and [Jonathan Yep](https://github.com/JonathanYep) developed the pyserial DXL driver for a Kindred project, which was used for the SenseAct DXL Communicator. [Daniel Snider](https://github.com/danielsnider), [Oliver Limoyo](https://github.com/Olimoyo), [Dylan Ashley](https://github.com/dylanashley), and [Craig Sherstan](https://github.com/csherstan) tested the framework, provided thoughtful suggestions, and confirmed the reproducibility of learning by running experiments on real robots.
+
 # Citing SenseAct
 
 For the SenseAct computational framework and the UR-Reacher tasks, please cite Mahmood et al. (2018a). For the DXL and the Create 2 tasks, please cite Mahmood et al. (2018b).
