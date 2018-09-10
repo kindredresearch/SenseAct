@@ -43,7 +43,7 @@ In order to use the CType-based driver, we need to install gcc and relevant pack
 
 `sudo apt-get install gcc-5 build-essential gcc-multilib g++-multilib`
 
-Then run the following to compile the C code:
+Then run the following script to download and compile the Dynamixel driver C libraries:
 
 `sudo bash setup_dxl.sh`
 

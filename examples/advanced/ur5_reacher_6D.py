@@ -20,9 +20,9 @@ def main():
 
     # Create UR5 Reacher2D environment
     env = ReacherEnv(
-            setup="UR5_default",
+            setup="UR5_6dof",
             host=None,
-            dof=2,
+            dof=6,
             control_type="velocity",
             target_type="position",
             reset_type="zero",
@@ -51,7 +51,7 @@ def main():
     sess.__enter__()
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+            hid_size=64, num_hid_layers=2)
 
     # Create and start plotting process
     plot_running = Value('i', 1)
@@ -67,7 +67,7 @@ def main():
 
     # Train baselines TRPO
     learn(env, policy_fn,
-          max_timesteps=150000,
+          max_timesteps=200000,
           timesteps_per_batch=2048,
           max_kl=0.05,
           cg_iters=10,
