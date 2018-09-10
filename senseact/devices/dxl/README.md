@@ -57,6 +57,23 @@ sudo adduser user_name dialout
 
 However, for this change to take effect, the user has to logout and then login again.
 
+# Uninstall Dynamixel library files
+- `cd senseact/lib/DynamixelSDK/c/build/` 
+- Depending on the OS and format, choose the right subfolder. For example, for a 64-bit linux platform, `cd linux64` 
+- `sudo make uninstall`
+- `cd ~/SenseAct` && `rm -rf senseact/lib/DynamixelSDK`
+
+If the `lib/DynamixelSDK` directory was removed before `sudo make uninstall`, follow the instructions listed below. The setup script copies the library file to the root directory to handle the serial post. Hence, we need to remove some files from `/usr/local`:
+
+ ```bash
+ # Only needed if "lib/DynamixelSDK" directory was removed before "sudo make uninstall"
+ rm /usr/local/lib_dxl_x64_c.so
+ rm /usr/local/lib_dxl_x64_c.so.2
+ rm /usr/local/lib_dxl_x64_c.so.2.0
+ rm /usr/local/lib_dxl_x64_c.so.2.0.0
+ rm /usr/local/include/dynamixel_sdk.h
+ ```
+
 # Additional resources
 Please note that this is not meant to be an exhaustive resource. We found the following links to be useful for
 additional information. If you need help with DXL troubleshooting, kindly reach out to use, we'd be happy to
