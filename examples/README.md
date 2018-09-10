@@ -17,8 +17,8 @@ Each examples also require its corresponding hardware, with the exception of [ad
 ### Example list
 Below is a list of examples provided with a learning agent. Each is marked in terms of difficulty of hardware and physical environment setup.
 * (Simple) Double Inverted Pendulum environment: [advanced/sim_double_pendulum.py](advanced/sim_double_pendulum.py)
-* (Moderate) DXL Reacher environment: [advanced/dxl_reacher.py](advanced/dxl_reacher.py)
-* (Moderate) DXL Tracker environment: [advanced/dxl_tracker.py](advanced/dxl_tracker.py)
+* (Simple) DXL Reacher environment: [advanced/dxl_reacher.py](advanced/dxl_reacher.py)
+* (Simple) DXL Tracker environment: [advanced/dxl_tracker.py](advanced/dxl_tracker.py)
 * (Moderate) UR5 Reacher 2D environment: [advanced/ur5_reacher.py](advanced/ur5_reacher.py)
 * (Moderate) UR5 Reacher 6D environment: [advanced/ur5_reacher_6D.py](advanced/ur5_reacher_6D.py)
 * (Complex) Create2 Mover environment: [advanced/create2_mover.py](advanced/create2_mover.py)
