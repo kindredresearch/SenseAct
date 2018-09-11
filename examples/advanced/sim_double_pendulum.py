@@ -1,7 +1,8 @@
+import os
+import datetime
 import time
 import baselines.common.tf_util as U
 import numpy as np
-
 
 from baselines.ppo1.pposgd_simple import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
@@ -10,6 +11,7 @@ from senseact.envs.sim_double_pendulum.sim_double_pendulum import DoubleInverted
 from senseact.utils import tf_set_seeds
 from helper import create_callback
 from multiprocessing import Process, Value, Manager
+
 
 def main():
     # use fixed random state
@@ -112,6 +114,12 @@ def plot_returns(env, batch_size, shared_returns, plot_running):
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
+
+    # Save plot to disk
+    now_date_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    os.makedirs('saved_figures', exist_ok=True)
+    plt.savefig('saved_figures/learning_curve_pendulum_%s.png' % now_date_str)
+
 
 if __name__ == '__main__':
     main()

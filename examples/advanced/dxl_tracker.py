@@ -1,3 +1,5 @@
+import os
+import datetime
 import time
 import copy
 
@@ -159,6 +161,11 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
+
+    # Save plot to disk
+    now_date_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    os.makedirs('saved_figures', exist_ok=True)
+    plt.savefig('saved_figures/learning_curve_dxl_tracker_%s.png' % now_date_str)
 
 if __name__ == '__main__':
     main()
