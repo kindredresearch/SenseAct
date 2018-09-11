@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 """
 Requires DynamixelSDK repo written by Robotis- https://github.com/ROBOTIS-GIT/DynamixelSDK.
 In particular, we use the commit version - "d6420db120daf9d777a2cb83e9f2ba27687504e7"

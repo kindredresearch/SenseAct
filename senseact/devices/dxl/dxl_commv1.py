@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 """
 Constants for Dynamixel CommV1 protocol
 Protocol 1.0 reference - http://support.robotis.com/en/product/actuator/dynamixel/dxl_communication.htm
@@ -86,7 +91,7 @@ def as_instruction_packet(dxl_id, instruction, *params):
 
 
 def packet_read(dxl_id, reg0, num_regs):
-    """Create an instruction packet to read data from the DXL control table. 
+    """Create an instruction packet to read data from the DXL control table.
     Args:
         dxl_id: An integer representing the DXL ID number
         reg0: An integer representing the register index in the control table
@@ -244,7 +249,7 @@ class ErrorBitsClass(object):
     """ The ErrorBits class represents syntactic support. After an instruction packet is sent to the DXl, it
     responds with a status packet. The error bits in the status packet can indicate voltage error, angle limit error,
     overload error, etc.
-     
+
      The usage is the following:
         ErrorBits['overheat'] -> int with one bit set
         ErrorBits['overheat', 'overload'] -> int with two bits set
@@ -282,7 +287,7 @@ class Status(object):
 
     def __init__(self, error_byte, data):
         """Inits Status class objects with corresponding data.
-        
+
         Args:
             // TODO
         """
@@ -303,7 +308,7 @@ class Status(object):
     # pylint: disable=missing-docstring
 
     @property
-    def input_voltage(self):        
+    def input_voltage(self):
         return self.error_byte & ERROR_BITS['input_voltage']
 
     @property

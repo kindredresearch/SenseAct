@@ -1,4 +1,9 @@
-"""Contains setups for UR reacher environments. Specifies safety 
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+"""Contains setups for UR reacher environments. Specifies safety
 box dimensions, joint limits to avoid self-collision etc."""
 
 import numpy as np
@@ -8,7 +13,7 @@ setups = {
               {
                   'host': '192.168.2.152',  # put UR5 Controller address here
                   'end_effector_low': np.array([-0.2, -0.3, 0.5]),
-                  'end_effector_high': np.array([0.2, 0.4, 1.0]),                 
+                  'end_effector_high': np.array([0.2, 0.4, 1.0]),
                   'angles_low':np.pi/180 * np.array(
                       [ 60,
                        -180,#-180
@@ -26,7 +31,7 @@ setups = {
                         120,
                         175
                        ]
-                  ),                  
+                  ),
                   'speed_max': 0.3,   # maximum joint speed magnitude using speedj
                   'accel_max': 1,      # maximum acceleration magnitude of the leading axis using speedj
                   'reset_speed_limit': 0.5,
@@ -47,7 +52,7 @@ setups = {
               {
                   'host': '192.168.2.152',  # put UR5 Controller address here
                   'end_effector_low': np.array([-0.3, -0.6, 0.5]),
-                  'end_effector_high': np.array([0.2, 0.4, 1.0]),                  
+                  'end_effector_high': np.array([0.2, 0.4, 1.0]),
                   'angles_low':np.pi/180 * np.array(
                       [ 30,
                        -180,#-180

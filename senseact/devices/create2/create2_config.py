@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 from collections import OrderedDict
 
 # Create2 opcode info for each possible command keyed on the opcode ID, include

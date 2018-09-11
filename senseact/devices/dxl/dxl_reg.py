@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 """Register block."""
 
 #pylint: disable=too-many-arguments,invalid-name,unused-argument
@@ -86,9 +91,9 @@ class Reg(object):
 
 class ContiguousRegisters(object):
     """Syntactic support class for accessing the Register objects.
-    
+
     The Register objects make up the FactoryDefaults singleton.
-    
+
     Attributes:
         ret_dxl_type: A bool flag. True for ctypes driver and False for pyserial driver. This flag is
                       used during data conversion (regular units to dxl units and vice versa).
@@ -251,7 +256,7 @@ class ContiguousRegisters(object):
         """
         if self.ret_dxl_type:
             return self.vals_from_dxl_data(data)
-        
+
         raw_offset = 0
         vals = []
         for reg in self._regs:

@@ -19,6 +19,11 @@ from math import pi
 # are (0, 360) but consistent with our historic use.
 # AngleRange = Affine(-180, 180)
 AngleRange = Affine(-pi, pi)
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 # XXX should be N/m, but chosen to match PyPot
 PercentRange = Affine(0, 100)
 VoltRange = Affine(0, 25.5)
