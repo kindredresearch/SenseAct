@@ -4,7 +4,7 @@ robot or mechanical structure. DYNAMIXELS’ are designed to be modular and dais
 
 Dynamixel motors can be easily used to build custom robots ranging from 3-DOF robot arms to humanoids.
 To control Dynamixel, communication should be established according to its protocol. We used DXL MX-64AT
-and AX-12A servos for all our experiments. They use [Protocol 1.0](http://support.robotis.com/en/product/actuator/dynamixel/dxl_communication.htm)
+servos for all our experiments. They use [Protocol 1.0](http://support.robotis.com/en/product/actuator/dynamixel/dxl_communication.htm)
 for half duplex UART serial communication. The motors are driven by sending and receiving binary data.
 
 We used a Xevelabs USB2AX v3.2a USB to TTL Dynamixel servo interface for connecting the motors to the computer.
@@ -80,7 +80,6 @@ additional information. If you need help with DXL troubleshooting, kindly reach 
 help you.
 
 - [DXL MX-64 docs](http://support.robotis.com/en/product/actuator/dynamixel/mx_series/mx-64at_ar.htm)
-- [DXL AX-12 docs](http://support.robotis.com/en/product/actuator/dynamixel/ax_series/dxl_ax_actuator.htm)
 - [Pypot](https://github.com/poppy-project/pypot)
 - [Robotis DynamixelSDK](https://github.com/ROBOTIS-GIT/DynamixelSDK)
 
