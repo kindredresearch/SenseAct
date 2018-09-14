@@ -2,11 +2,23 @@ from math import sin, cos, fabs, asin, acos, sqrt, atan2
 from math import pi as PI
 import numpy as np
 
+FIRMWARE_VERSION = 3.3 # put firmware version here
 DASHBOARD_SERVER_PORT = 29999  # to unlock protective stop
 PRIMARY_CLIENT_INTERFACE_PORT = 30001
 SECONDARY_CLIENT_INTERFACE_PORT = 30002
 REALTIME_COMM_CLIENT_INTERFACE_PORT = 30003
-REALTIME_COMM_PACKET_SIZE = 1060
+if FIRMWARE_VERSION >= 3.5:
+    REALTIME_COMM_PACKET_SIZE = 1108
+elif FIRMWARE_VERSION >= 3.2:
+    REALTIME_COMM_PACKET_SIZE = 1060
+elif FIRMWARE_VERSION >= 3.0:
+    REALTIME_COMM_PACKET_SIZE = 1044
+elif FIRMWARE_VERSION >= 1.8:
+    REALTIME_COMM_PACKET_SIZE = 812
+elif FIRMWARE_VERSION >= 1.7:
+    REALTIME_COMM_PACKET_SIZE = 764
+else:
+    REALTIME_COMM_PACKET_SIZE = 756
 
 COMMANDS = {
     'NOTHING':
@@ -32,7 +44,7 @@ COMMANDS = {
             'default':
                 {
                     'a': 1.4,
-                    't_min': 0.008,
+                    't_min': 0.008, # for firmware < 3.1, 0.02 might work better
                 }
         },
     'MOVEL':
@@ -75,7 +87,8 @@ USE_DEFAULT = np.finfo(np.float64).min
 
 ACTUATOR_DT = 0.008
 
-REALTIME_COMM_PACKET = np.dtype(
+if FIRMWARE_VERSION >= 3.5:
+    REALTIME_COMM_PACKET = np.dtype(
     [('message_size', '>i4'),
      ('time', '>f8'),
      ('q_target', '>f8', (6,)),
@@ -112,6 +125,153 @@ REALTIME_COMM_PACKET = np.dtype(
      ('v_actual', '>f8', (6,)),
      ('digital_outputs', '>f8'),
      ('program_state', '>f8'),
+     ('elbow_position', '>f8', (3,)),
+     ('elbow_velocity', '>f8', (3,)),
+     ])
+elif FIRMWARE_VERSION >= 3.2:
+    REALTIME_COMM_PACKET = np.dtype(
+    [('message_size', '>i4'),
+     ('time', '>f8'),
+     ('q_target', '>f8', (6,)),
+     ('qd_target', '>f8', (6,)),
+     ('qdd_target', '>f8', (6,)),
+     ('i_target', '>f8', (6,)),
+     ('m_target', '>f8', (6,)),
+     ('q_actual', '>f8', (6,)),
+     ('qd_actual', '>f8', (6,)),
+     ('i_actual', '>f8', (6,)),
+     ('i_control', '>f8', (6,)),
+     ('tool_vector_actual', '>f8', (6,)),
+     ('tcp_speed_actual', '>f8', (6,)),
+     ('tcp_force', '>f8', (6,)),
+     ('tool_vector_target', '>f8', (6,)),
+     ('tcp_speed_target', '>f8', (6,)),
+     ('digital_input_bits', '>f8'),
+     ('motor_temperatures', '>f8', (6,)),
+     ('controller_timer', '>f8'),
+     ('test_value', '>f8'),
+     ('robot_mode', '>f8'),
+     ('joint_modes', '>f8', (6,)),
+     ('safety_mode', '>f8'),
+     ('reserved_0', '>f8', (6,)),
+     ('tool_accelerometer_values', '>f8', (3,)),
+     ('reserved_1', '>f8', (6,)),
+     ('speed_scaling', '>f8'),
+     ('linear_momentum_norm', '>f8'),
+     ('reserved_2', '>f8'),
+     ('reserved_3', '>f8'),
+     ('v_main', '>f8'),
+     ('v_robot', '>f8'),
+     ('i_robot', '>f8'),
+     ('v_actual', '>f8', (6,)),
+     ('digital_outputs', '>f8'),
+     ('program_state', '>f8'),
+     ])
+elif FIRMWARE_VERSION >= 3.0:
+    REALTIME_COMM_PACKET = np.dtype(
+    [('message_size', '>i4'),
+     ('time', '>f8'),
+     ('q_target', '>f8', (6,)),
+     ('qd_target', '>f8', (6,)),
+     ('qdd_target', '>f8', (6,)),
+     ('i_target', '>f8', (6,)),
+     ('m_target', '>f8', (6,)),
+     ('q_actual', '>f8', (6,)),
+     ('qd_actual', '>f8', (6,)),
+     ('i_actual', '>f8', (6,)),
+     ('i_control', '>f8', (6,)),
+     ('tool_vector_actual', '>f8', (6,)),
+     ('tcp_speed_actual', '>f8', (6,)),
+     ('tcp_force', '>f8', (6,)),
+     ('tool_vector_target', '>f8', (6,)),
+     ('tcp_speed_target', '>f8', (6,)),
+     ('digital_input_bits', '>f8'),
+     ('motor_temperatures', '>f8', (6,)),
+     ('controller_timer', '>f8'),
+     ('test_value', '>f8'),
+     ('robot_mode', '>f8'),
+     ('joint_modes', '>f8', (6,)),
+     ('safety_mode', '>f8'),
+     ('reserved_0', '>f8', (6,)),
+     ('tool_accelerometer_values', '>f8', (3,)),
+     ('reserved_1', '>f8', (6,)),
+     ('speed_scaling', '>f8'),
+     ('linear_momentum_norm', '>f8'),
+     ('reserved_2', '>f8'),
+     ('reserved_3', '>f8'),
+     ('v_main', '>f8'),
+     ('v_robot', '>f8'),
+     ('i_robot', '>f8'),
+     ('v_actual', '>f8', (6,)),
+     ])
+elif FIRMWARE_VERSION >= 1.8:
+    REALTIME_COMM_PACKET = np.dtype(
+    [('message_size', '>i4'),
+     ('time', '>f8'),
+     ('q_target', '>f8', (6,)),
+     ('qd_target', '>f8', (6,)),
+     ('qdd_target', '>f8', (6,)),
+     ('i_target', '>f8', (6,)),
+     ('m_target', '>f8', (6,)),
+     ('q_actual', '>f8', (6,)),
+     ('qd_actual', '>f8', (6,)),
+     ('i_actual', '>f8', (6,)),
+     ('tool_accelerometer_values', '>f8', (3,)),
+     ('unused', '>f8', (15,)),
+     ('tcp_force', '>f8', (6,)),
+     ('tool_vector', '>f8', (6,)),
+     ('tcp_speed', '>f8', (6,)),
+     ('digital_input_bits', '>f8'),
+     ('motor_temperatures', '>f8', (6,)),
+     ('controller_timer', '>f8'),
+     ('test_value', '>f8'),
+     ('robot_mode', '>f8'),
+     ('joint_modes', '>f8', (6,)),
+     ])
+elif FIRMWARE_VERSION >= 1.7:
+    REALTIME_COMM_PACKET = np.dtype(
+    [('message_size', '>i4'),
+     ('time', '>f8'),
+     ('q_target', '>f8', (6,)),
+     ('qd_target', '>f8', (6,)),
+     ('qdd_target', '>f8', (6,)),
+     ('i_target', '>f8', (6,)),
+     ('m_target', '>f8', (6,)),
+     ('q_actual', '>f8', (6,)),
+     ('qd_actual', '>f8', (6,)),
+     ('i_actual', '>f8', (6,)),
+     ('tool_accelerometer_values', '>f8', (3,)),
+     ('unused', '>f8', (15,)),
+     ('tcp_force', '>f8', (6,)),
+     ('tool_vector', '>f8', (6,)),
+     ('tcp_speed', '>f8', (6,)),
+     ('digital_input_bits', '>f8'),
+     ('motor_temperatures', '>f8', (6,)),
+     ('controller_timer', '>f8'),
+     ('test_value', '>f8'),
+     ('robot_mode', '>f8'),
+     ])
+else:
+    REALTIME_COMM_PACKET = np.dtype(
+    [('message_size', '>i4'),
+     ('time', '>f8'),
+     ('q_target', '>f8', (6,)),
+     ('qd_target', '>f8', (6,)),
+     ('qdd_target', '>f8', (6,)),
+     ('i_target', '>f8', (6,)),
+     ('m_target', '>f8', (6,)),
+     ('q_actual', '>f8', (6,)),
+     ('qd_actual', '>f8', (6,)),
+     ('i_actual', '>f8', (6,)),
+     ('tool_accelerometer_values', '>f8', (3,)),
+     ('unused', '>f8', (15,)),
+     ('tcp_force', '>f8', (6,)),
+     ('tool_vector', '>f8', (6,)),
+     ('tcp_speed', '>f8', (6,)),
+     ('digital_input_bits', '>f8'),
+     ('motor_temperatures', '>f8', (6,)),
+     ('controller_timer', '>f8'),
+     ('test_value', '>f8'),
      ])
 
 class SafetyModes(object):
@@ -194,9 +354,12 @@ class SpeedJ(object):
         self.t_min = t_min
 
     def __repr__(self):
-        return 'speedj([{}, {}, {}, {}, {}, {}], {}, {})'.format(
-            *(list(self.qd) + [self.a, self.t_min]))
-
+        if FIRMWARE_VERSION >= 3.1 and FIRMWARE_VERSION < 3.3:
+            return 'speedj([{}, {}, {}, {}, {}, {}], {})'.format(
+                *(list(self.qd) + [self.a]))
+        else:
+            return 'speedj([{}, {}, {}, {}, {}, {}], {}, {})'.format(
+                *(list(self.qd) + [self.a, self.t_min]))
 
 class MoveJ(object):
     """Represents MoveJ UR5 command.
@@ -537,7 +700,7 @@ def inverse(T, wrist_desired, params):
             solution[ii] = joint_ii
     return rval
 
-# sprted according to distance from ref_pos
+# sorted according to distance from ref_pos
 def inverse_near(T, wrist_desired, ref_pos, params):
     """Computes inverse kinematics solutions near given position.
 
