@@ -15,6 +15,7 @@ This repository provides the following real-world robotic tasks, which are propo
 - [UR-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/ur/reacher_env.py) (both 2 joint and 6 joint control)
 
 ### Dynamixel (DXL) actuators:
+Currently we only support MX-64AT.
 - [DXL-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_reacher_env.py)
 - [DXL-Tracker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_tracker_env.py)
 
