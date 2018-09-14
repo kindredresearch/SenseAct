@@ -4,6 +4,45 @@ box dimensions, joint limits to avoid self-collision etc."""
 import numpy as np
 
 setups = {
+    'UR10_default':
+              {
+                  'host': '192.168.131.17',  # put UR10 Controller address here
+                  'end_effector_low': np.array([-0.3, -0.4, 0.75]),
+                  'end_effector_high': np.array([0.0, 0.4, 1.25]),
+                  'angles_low':np.pi/180 * np.array(
+                      [ 60,
+                       -180,#-180
+                       -120,
+                       -50,
+                        50,
+                        50
+                       ]
+                  ),
+                  'angles_high':np.pi/180 * np.array(
+                      [ 90,
+                       -60,
+                        130,
+                        25,
+                        120,
+                        175
+                       ]
+                  ),
+                  'speed_max': 0.3,   # maximum joint speed magnitude using speedj
+                  'accel_max': 1,      # maximum acceleration magnitude of the leading axis using speedj
+                  'reset_speed_limit': 0.5,
+                  'q_ref': np.array([ 1.58724391, -2.48, 1.68, -0.71790582, 1.63685572, 1.00910473]), # home or reference position
+                  'box_bound_buffer': 0.001,
+                  'angle_bound_buffer': 0.001,
+                  'ik_params':
+                      (
+                          0.1273,   # d1
+                          -0.612,   # a2
+                          -0.5723,  # a3
+                          0.163941, # d4
+                          0.1157,   # d5
+                          0.0922    # d6
+                      )
+              },
     'UR5_default':
               {
                   'host': '192.168.2.152',  # put UR5 Controller address here
