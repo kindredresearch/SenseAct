@@ -257,3 +257,5 @@ The `_compute_sensation_` method converts (a history of) sensory data into an ob
 The `_compute_actuation_` method converts an action produced by an RL agent into a numpy array representation of a corresponding actuation command and stores it into an `_actuation_packet_` dictionary, which has the format {communicator_string_name: actuation_numpy_array, ...}.
 
 The `_reset_` method defines and executes the end of an episode reset function for a given task. For example, in UR5 Reacher reset moves the arm into a fixed initial position, therefore the `_reset_` method sends corresponding `moveL` UR5 command to `URCommunicator` and sleeps sufficient amount of time for the command to be executed on a robot.
+
+The above three methods can be called on a different thread or process depends on the run mode.  Therefore, special care is required when implementing them.  We have added the trailing underscore to the methods' name as an caution indicator.
