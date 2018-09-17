@@ -14,14 +14,23 @@ This repository provides the following real-world robotic tasks, which are propo
 ### Universal-Robots (UR) robotic arms:
 - [UR-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/ur/reacher_env.py) (both 2 joint and 6 joint control)
 
+| ![UR-Reacher-2](docs/ur-reacher-2-trpo.gif) <br> UR-Reacher-2 | ![UR-Reacher-6](docs/ur-reacher-6-trpo.gif) <br /> UR-Reacher-6 |
+| --- | --- |
+
 ### Dynamixel (DXL) actuators:
 Currently we only support MX-64AT.
 - [DXL-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_reacher_env.py)
 - [DXL-Tracker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_tracker_env.py)
 
+| ![DXL-Reacher](docs/dxl-reacher-trpo.gif) <br/>DXL-Reacher | ![DXL-Tracker](docs/dxl-tracker-trpo.gif)<br /> DXL-Tracker |
+| --- | --- |
+
 ### iRobot Create 2 robots:
 - [Create-Mover](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_mover_env.py)
 - [Create-Docker](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/create2/create2_docker_env.py)
+
+| ![Create-Mover](docs/create-mover-ppo.gif) <br />Create-Mover | ![Create-Docker](docs/create-docker-trpo.gif) <br /> Create-Docker |
+| --- | --- |
 
 Mahmood et al. (2018b) provide extensive results comparing multiple reinforcement learning algorithms on the above tasks, and Mahmood et al. (2018a) show the effect of different task-setup elements in learning. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
 
