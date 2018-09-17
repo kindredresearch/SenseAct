@@ -80,4 +80,4 @@ For the SenseAct computational framework and the UR-Reacher tasks, please cite M
 
 * Mahmood, A. R., Korenkevych, D., Komer,B. J., Bergstra, J. (2018a). [Setting up a reinforcement learning task with a real-world robot](https://arxiv.org/abs/1803.07067). In *IEEE/RSJ International Conference on Intelligent Robots and Systems*.
 
-* Mahmood A. R., Korenkevych, D., Vasan, G., Ma, W., Bergstra, J. (2018b). Benchmarking reinforcement learning algorithms on real-World robots. In *Proceedings of the 2nd Annual Conference on Robot Learning*.
+* Mahmood, A. R., Korenkevych, D., Vasan, G., Ma, W., Bergstra, J. (2018b). Benchmarking reinforcement learning algorithms on real-world robots. In *Proceedings of the 2nd Annual Conference on Robot Learning*.
