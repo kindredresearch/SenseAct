@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # Get script directory to help with
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 export DXL_DIR="$DIR/senseact/lib/"

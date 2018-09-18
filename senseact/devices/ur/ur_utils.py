@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 from math import sin, cos, fabs, asin, acos, sqrt, atan2
 from math import pi as PI
 import numpy as np
@@ -386,7 +391,7 @@ def inverse(T, wrist_desired, params):
         params: a tuple containing physical arm parameters
 
     Returns:
-         A list containing joint-angle 6-vectors with solutions 
+         A list containing joint-angle 6-vectors with solutions
          to inverse kinematics problem
     """
     d1, a2, a3, d4, d5, d6 = params
@@ -547,11 +552,11 @@ def inverse_near(T, wrist_desired, ref_pos, params):
         wrist_desired: //TODO
         ref_pos: a tuple containing reference joint positions in rad.
             The funciton will search solutions to ik problem near this
-            position. 
+            position.
         params: a tuple containing physical arm parameters
 
     Returns:
-         A list containing joint-angle 6-vectors with solutions 
+         A list containing joint-angle 6-vectors with solutions
          to inverse kinematics problem
     """
     solutions = inverse(T, wrist_desired, params)

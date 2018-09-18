@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 import socket
 import time
 import numpy as np
@@ -209,7 +214,7 @@ class URCommunicator(Communicator):
             self._num_reads = 0
             self._num_read_lock.release()
             recent_actuation, time_stamp, _ = self.actuator_buffer.read_update()
-            recent_actuation = recent_actuation[0]          
+            recent_actuation = recent_actuation[0]
             if recent_actuation[0] == ur_utils.COMMANDS['SERVOJ']['id']:
                 servoj_values = ur_utils.COMMANDS['SERVOJ']
                 cmd = ur_utils.ServoJ(

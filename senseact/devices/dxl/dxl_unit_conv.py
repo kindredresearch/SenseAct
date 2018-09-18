@@ -1,3 +1,8 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 """
 Unit conversion
 """
@@ -11,7 +16,7 @@ from .dxl_exceptions import UnitConversionNotImplemented
 
 class UnitConversion(object):
     """Base class for converting values to physics metrics.
-    
+
     Attributes:
         y_min: A float representing lower limit of the converted value
         y_max: A float representing upper limit of the converted value
@@ -68,7 +73,7 @@ class Affine(UnitConversion):
 
 class AngleVelRange(UnitConversion):
     """Class provides methods for velocity convertion.
-     
+
     Velocity registers on AX12 and AX18 servos encode present_speed.
     """
 
@@ -168,7 +173,7 @@ class BaudConversion(UnitConversion):
 
 class CurrentConversion(UnitConversion):
     """Description //TODO
-    
+
     Unit in mA
     """
     def __init__(self):
@@ -188,7 +193,7 @@ class CurrentConversion(UnitConversion):
 
 class GoalTorqueConversion(UnitConversion):
     """ Description //TODO
-    
+
     Unit in mA
     """
 
@@ -214,7 +219,7 @@ class GoalTorqueConversion(UnitConversion):
 
 class ReturnTimeDelayConversion(UnitConversion):
     """Description //TODO
-    
+
     Returns time delay register."""
     # table maps microseconds -> int code
     table = dict((2 * ii, ii) for ii in range(0, 254))

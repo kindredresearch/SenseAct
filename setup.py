@@ -1,6 +1,9 @@
+# Copyright (c) 2018, The SenseAct Authors.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
 from setuptools import setup, find_packages
-from setuptools.command.develop import develop
-from setuptools.command.install import install
 import sys, subprocess
 
 
@@ -21,7 +24,7 @@ setup(name='senseact',
           'pyserial',
       ],
       description='Kindred SenseAct framework',
-      author='Kindred AI',
+      author='The SenseAct Team',
       url='https://github.com/kindredresearch/SenseAct',
       author_email='',
-      version='0.0.1')
+      version='0.1.0')
