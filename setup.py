@@ -27,4 +27,4 @@ setup(name='senseact',
       author='The SenseAct Team',
       url='https://github.com/kindredresearch/SenseAct',
       author_email='',
-      version='0.0.1')
+      version='0.1.0')
