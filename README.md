@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
-This repository provides the implementation of several reinforcement learning (RL) tasks with multiple real-world robots.
+This repository provides the implementation of several reinforcement learning tasks with multiple real-world robots.
 These tasks come with an interface similar to [OpenAI-Gym](https://github.com/openai/gym) so that learning algorithms can be plugged in easily and in a uniform manner across tasks.
 All the tasks here are implemented based on a computational framework of robot-agent communication proposed by Mahmood et al. (2018a), which we call *SenseAct*.
 In this computational framework, agent and environment-related computations are ordered and distributed among multiple concurrent processes in a specific way. By doing so, SenseAct enables the following:
