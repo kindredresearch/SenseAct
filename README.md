@@ -73,6 +73,7 @@ python -m unittest discover -b
 # Support
 
 Installation problems? Feature requests? General questions?
+* read through examples and API [documentation](https://github.com/kindredresearch/SenseAct/tree/master/docs)
 * create github issues on the [SenseAct project](https://github.com/kindredresearch/SenseAct)
 * join the mailing list [https://groups.google.com/forum/#!forum/senseact](https://groups.google.com/forum/#!forum/senseact)
 
