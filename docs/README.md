@@ -254,7 +254,7 @@ class RTRLBaseEnv(object):
 ```
 The `_compute_sensation_` method converts (a history of) sensory data into an observation vector, computes reward, identifies whether the episode is over and returns these data as a flat numpy array.
 
-The `_compute_actuation_` method converts an action produced by an RL agent into a numpy array representation of a corresponding actuation command and stores it into an `_actuation_packet_` dictionary, which has the format {communicator_string_name: actuation_numpy_array, ...}.
+The `_compute_actuation_` method converts an action produced by an agent into a numpy array representation of a corresponding actuation command and stores it into an `_actuation_packet_` dictionary, which has the format {communicator_string_name: actuation_numpy_array, ...}.
 
 The `_reset_` method defines and executes the end of an episode reset function for a given task. For example, in UR5 Reacher reset moves the arm into a fixed initial position, therefore the `_reset_` method sends corresponding `moveL` UR5 command to `URCommunicator` and sleeps sufficient amount of time for the command to be executed on a robot.
 
