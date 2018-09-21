@@ -61,7 +61,7 @@ Then run the following script to download and compile the Dynamixel driver C lib
 
 For additional setup and troubleshooting information regarding Dynamixels, please see [DXL Docs](senseact/devices/dxl/).
 
-# Tests
+### Tests
 
 You can check whether SenseAct is installed correctly by running the included unit tests.
 
@@ -69,6 +69,12 @@ You can check whether SenseAct is installed correctly by running the included un
 cd SenseAct
 python -m unittest discover -b
 ```
+
+# Support
+
+Installation problems? Feature requests? General questions?
+* create github issues on the [SenseAct project](https://github.com/kindredresearch/SenseAct)
+* join the mailing list [https://groups.google.com/forum/#!forum/senseact](https://groups.google.com/forum/#!forum/senseact)
 
 # Acknowledgments
 
