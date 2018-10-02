@@ -258,49 +258,29 @@ def sync_write(port, block, data):
     # Clear syncwrite parameter storage
     dynamixel.groupSyncWriteClearParam(group_num)
 
-def init_bulk_read(port):
-    """ Initialize groupBulkRead Structs
 
-        Args:
-            port: Dynamixel portHandler object
+def init_bulk_read(port, blocks, dxl_ids):
+    """ This function initializes the parameters for bulk read packet construction.
 
-        Returns:
-            An instance of dynamixel.groupBulkRead defined in C
+    Note: Works only on DXL MX series!!
+
+    Args:
+        port: Dynamixel portHandler object
+        blocks: A list containing contiguous read block registers for each target dxl
+        dxl_ids: A list of ints containing DXL ID numbers
+
+    Returns:
+        Dynamixel groupBulkRead object
     """
+
     group_num = dynamixel.groupBulkRead(port, PROTOCOL_VERSION)
-    return group_num
-
-def bulk_read(port, blocks, dxl_ids, group_num=None):
-    """ Read from multiple DXL MX-64s sending one bulk read packet
-
-    This instruction is used for reading values of multiple MX series DXLs simultaneously by sending a single
-    Instruction Packet. The packet length is shortened compared to sending multiple READ commands, and the idle time
-    between the status packets being returned is also shortened to save communication time. However, this cannot be
-    used to read a single module. If an identical ID is designated multiple times, only the first designated
-    parameter will be processed.
-
-        Args:
-            port: Dynamixel portHandler object
-            blocks: A list containing blocks of contiguous registers
-            dxl_ids: A list containing DXL id numbers
-            group_num: An instance of dynamixel.groupBulkRead defined in C
-
-        Returns:
-            A dictionary containing the motor id, the register names and their corresponding values.
-            For e.g., if present position and goal position are read from 2 motors, the output would be:
-            {'1': {'present_pos': 2.34, 'goal_pos': 3.21}, '2': {'present_pos': 1.23, 'goal_pos': 2.55}}
-    """
-    # Initialize Group bulk read instance
-    if group_num == None:
-        group_num = init_bulk_read(port)
-
-    if not isinstance(blocks, list):
+    if not isinstance(blocks, list) and not isinstance(dxl_ids, tuple):
         blocks = blocks[blocks]
 
-    if not isinstance(dxl_ids, list):
+    if not isinstance(dxl_ids, list) and not isinstance(dxl_ids, tuple):
         dxl_ids = [dxl_ids]
 
-    assert len(blocks)==len(dxl_ids)
+    assert len(blocks) == len(dxl_ids)
 
     # Add parameter storage for Dynamixel#1 present position value
     for i, (id, block) in enumerate(zip(dxl_ids, blocks)):
@@ -312,27 +292,72 @@ def bulk_read(port, blocks, dxl_ids, group_num=None):
         if dxl_addparam_result != 1:
             print("[ID:%03d] groupBulkRead addparam failed" % (id))
 
-    # Bulkread specified address
+    return group_num
+
+
+def bulk_read(port, group_num, blocks, dxl_ids):
+    """ Bulk read contiguous registers on several DXLs
+
+    Note: Works only on DXL MX series!!
+
+    This command is used for reading the values of several DXLs simultaneously, by sending a
+    single Instruction Packet. The packet length is lessened compared to sending many READ commands,
+    and the idle time between the status packets being returned is also lessened to save communication time.
+    But, this cannot be used to read many times on a single module, and if several of the same module ID
+    is designated, only the firstly designated parameter will be processed.
+    Args:
+        port: Dynamixel portHandler object
+        group_num: Dynamixel groupBulkRead object
+        blocks: A list containing contiguous read block registers for each target dxl
+        dxl_ids: A list of ints containing DXL ID numbers
+
+    Returns:
+        Dict of dicts containing dxl control table values for each motor and its corresponding register
+    """
+
+    vals = bulk_read_vals(port, group_num, blocks, dxl_ids)
+    vals_dict = {}
+    ind = 0
+    for id, block in zip(dxl_ids, blocks):
+        id_vals = {}
+        for reg in block._regs:
+            id_vals[reg.name] = vals[ind]
+            ind += 1
+        vals_dict[id] = id_vals
+
+    return vals_dict
+
+
+def bulk_read_vals(port, group_num, blocks, dxl_ids):
+    """ Bulk read contiguous registers on several DXLs
+
+    Args:
+        port: Dynamixel portHandler object
+        group_num: Dynamixel groupBulkRead object
+        blocks: A list containing contiguous read block registers for each target dxl
+        dxl_ids: A list of ints containing DXL ID numbers
+
+    Returns:
+        A list containing dxl control table values for all the motors in dxl_ids and registers in blocks
+    """
     dynamixel.groupBulkReadTxRxPacket(group_num)
     dxl_comm_result = dynamixel.getLastTxRxResult(port, PROTOCOL_VERSION)
     if dxl_comm_result != COMM_SUCCESS:
         print(dynamixel.getTxRxResult(PROTOCOL_VERSION, dxl_comm_result))
 
     # Read the values and convert them
-    vals_dict = {}
+    all_vals = []
     for i, (id, block) in enumerate(zip(dxl_ids, blocks)):
-        address = block.offset
-        length = block.width
-        # Check if groupbulkread data of Dynamixel#1 is available
-        dxl_getdata_result = ctypes.c_ubyte(
-            dynamixel.groupBulkReadIsAvailable(group_num, id, address, length)).value
-        if dxl_getdata_result != 1:
-            print("[ID:%03d] groupBulkRead getdata failed" % (id))
+        data_pos = 0
+        vals = []
+        for reg in block._regs:
+            data = dynamixel.groupBulkReadGetData(group_num, id, block.offset + data_pos, reg.width)
+            data_pos += reg.width
+            vals.append(data)
+        all_vals.extend(block.vals_from_data(vals))
 
-        raw_val = dynamixel.groupBulkReadGetData(group_num, id, address, length)
-        data = block.vals_from_data([raw_val])
-        vals_dict[i] = data
-    return vals_dict
+    return all_vals
+
 
 def clear_port(port):
     """ Clears device port. """
