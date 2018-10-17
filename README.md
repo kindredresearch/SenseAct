@@ -19,6 +19,7 @@ This repository provides the following real-world robotic tasks, which are propo
 | ![UR-Reacher-2](docs/ur-reacher-2-trpo.gif) <br> UR-Reacher-2 | ![UR-Reacher-6](docs/ur-reacher-6-trpo.gif) <br /> UR-Reacher-6 |
 | --- | --- |
 
+Tested on UR Software v. 3.3.4.310
 ### Dynamixel (DXL) actuators:
 Currently we only support MX-64AT.
 - [DXL-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/dxl/dxl_reacher_env.py)
