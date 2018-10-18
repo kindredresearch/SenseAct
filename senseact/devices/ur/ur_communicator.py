@@ -117,6 +117,7 @@ class URCommunicator(Communicator):
             self.pre_check(data)
             data = data.ljust(ur_utils.REALTIME_COMM_PACKET.itemsize, b'\0')
             parsed = np.frombuffer(data, dtype=ur_utils.REALTIME_COMM_PACKET)
+
             self.sensor_buffer.write(parsed)
 
             self._prev_recv_time = self._recv_time

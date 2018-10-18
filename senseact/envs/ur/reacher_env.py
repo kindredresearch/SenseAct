@@ -462,7 +462,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         else:
             print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
             self.close()
-            #raise RuntimeError('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
         self._action_ = action
         action = np.clip(action, self._action_low, self._action_high)
         self.return_point = None   # a point within the box to which to return when out of box bounds
