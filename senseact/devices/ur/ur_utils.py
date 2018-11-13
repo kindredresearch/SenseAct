@@ -3,6 +3,8 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
+# Developed for UR Software v. 3.3.4.310
 from math import sin, cos, fabs, asin, acos, sqrt, atan2
 from math import pi as PI
 import numpy as np

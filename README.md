@@ -14,6 +14,7 @@ In this computational framework, agent and environment-related computations are 
 This repository provides the following real-world robotic tasks, which are proposed by Mahmood et al. (2018b) as benchmark tasks for reinforcement learning algorithms:
 
 ### Universal-Robots (UR) robotic arms:
+Tested on UR Software v. 3.3.4.310
 - [UR-Reacher](https://github.com/kindredresearch/SenseAct/blob/master/senseact/envs/ur/reacher_env.py) (both 2 joint and 6 joint control)
 
 | ![UR-Reacher-2](docs/ur-reacher-2-trpo.gif) <br> UR-Reacher-2 | ![UR-Reacher-6](docs/ur-reacher-6-trpo.gif) <br /> UR-Reacher-6 |
