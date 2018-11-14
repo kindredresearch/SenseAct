@@ -185,7 +185,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._pstop_time_ = None
         self._pstop_times_ = []
-        self._safety_mode_ = 0
+        self._safety_mode_ = ur_utils.SafetyModes.NONE
         self._max_pstop = 10
         self._max_pstop_window = 600
         self._clear_pstop_after = 2
