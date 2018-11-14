@@ -135,6 +135,7 @@ class SafetyModes(object):
     PROTECTIVE_STOP = 3
     REDUCED = 2
     NORMAL = 1
+    NONE = 0
 
 
 class ServoJ(object):

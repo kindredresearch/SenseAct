@@ -185,7 +185,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._pstop_time_ = None
         self._pstop_times_ = []
-        self._safety_mode_ = None
+        self._safety_mode_ = ur_utils.SafetyModes.NONE
         self._max_pstop = 10
         self._max_pstop_window = 600
         self._clear_pstop_after = 2
@@ -435,8 +435,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             timestamp: a float containing action timestamp
             index: an integer containing action index
         """
-        if self._safety_mode_ == ur_utils.SafetyModes.NORMAL:
-            self.pstop_time = None
+        if self._safety_mode_ == ur_utils.SafetyModes.NORMAL or \
+            self._safety_mode_ == ur_utils.SafetyModes.NONE:
+                self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.REDUCED:
             self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.PROTECTIVE_STOP:
@@ -459,8 +460,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._actuation_packet_['UR5'] = self._nothing_packet
             return
         else:
+            print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
             self.close()
-            raise RuntimeError('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
         self._action_ = action
         action = np.clip(action, self._action_low, self._action_high)
         self.return_point = None   # a point within the box to which to return when out of box bounds
