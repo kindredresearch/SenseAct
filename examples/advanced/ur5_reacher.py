@@ -20,6 +20,7 @@ from helper import create_callback
 
 
 def main():
+    # optionally use a pretrained model
     load_model_data = None
     hidden_sizes = (32, 32)
     if len(sys.argv) > 1:
