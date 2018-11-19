@@ -5,7 +5,9 @@
 # LICENSE file in the root directory of this source tree.
 import time
 import copy
+import sys
 import numpy as np
+import pickle as pkl
 import baselines.common.tf_util as U
 
 import senseact.devices.create2.create2_config as create2_config
@@ -20,6 +22,14 @@ from helper import create_callback
 
 
 def main():
+    # optionally use a pretrained model
+    load_model_data = None
+    hidden_sizes = (32, 32)
+    if len(sys.argv) > 1:
+        load_model_path = sys.argv[1]
+        load_model_data = pkl.load(open(load_model_path, 'rb'))
+        hidden_sizes = load_model_data['hidden_sizes']
+
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -35,9 +45,10 @@ def main():
     # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
+
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+            hid_size=hidden_sizes[0], num_hid_layers=len(hidden_sizes))
 
     # Create and start plotting process
     plot_running = Value('i', 1)
@@ -49,7 +60,7 @@ def main():
     pp.start()
 
     # Create callback function for logging data from baselines TRPO learn
-    kindred_callback = create_callback(shared_returns)
+    kindred_callback = create_callback(shared_returns, load_model_data)
 
     # Train baselines TRPO
     learn(env, policy_fn,
