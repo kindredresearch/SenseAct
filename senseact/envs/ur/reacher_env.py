@@ -412,13 +412,17 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._target_diff_ = self._q_[-1, self._joint_indices] - self._target_
 
         self._reward_.value = self._compute_reward_()
+        if self._reward_type == "sparse":
+            done = self._reward_.value >= 0
+        else:
+            done = 0
         # TODO: use the correct obs that matches the observation_space
         return np.concatenate((self._q_[:, self._joint_indices].flatten(),
                                self._qd_[:, self._joint_indices].flatten() / self._speed_high,
                                self._target_diff_,
                                self._action_ / self._action_high,
                                [self._reward_.value],
-                               [0]))
+                               [done]))
 
     def _compute_actuation_(self, action, timestamp, index):
         """Creates and sends actuation packets to the communicator.
@@ -693,17 +697,27 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             A float reward.
         """
         if self._target_type == "position":
+            dist = np.linalg.norm(self._target_diff_, ord=2)
             if self._reward_type == "linear":
-                reward_dist = -np.linalg.norm(self._target_diff_, ord=2)
+                reward_dist = -dist
             elif self._reward_type == "precision":
-                reward_dist = -np.linalg.norm(self._target_diff_, ord=2) +\
-                              np.exp( -np.linalg.norm(self._target_diff_, ord=2)**2 / 0.01)
+                reward_dist = -dist +\
+                              np.exp( -dist**2 / 0.01)
+            elif self._reward_type == "sparse":
+                if dist < 0.05:
+                    reward_dist = 0
+                else:
+                    reward_dist = -0.1
+
         elif self._target_type == "angle":
+            dist = np.linalg.norm(self._target_diff_, ord=1)
             if self._reward_type == "linear":
-                reward_dist = -np.linalg.norm(self._target_diff_, ord=1)
+                reward_dist = -dist
             elif self._reward_type == "precision":
-                reward_dist = -np.linalg.norm(self._target_diff_, ord=1) +\
-                              np.exp(-np.linalg.norm(self._target_diff_, ord=1) ** 2 / 0.01)
+                reward_dist = -dist +\
+                              np.exp(-dist ** 2 / 0.01)
+            elif self._reward_type == "sparse":
+                raise NotImplementedError
 
         # TODO: doublecheck whether '0' or '-1' should be used as the index
         reward_vel = -self._vel_penalty * np.square(self._qd_[-1, self._joint_indices]).sum()
