@@ -11,7 +11,7 @@ import numpy as np
 setups = {
     'UR5_default':
               {
-                  'host': '192.168.2.152',  # put UR5 Controller address here
+                  'host': '10.44.60.129', # put UR5 Controller address here (192.168.2.152) (10.44.60.122)
                   'end_effector_low': np.array([-0.2, -0.3, 0.5]),
                   'end_effector_high': np.array([0.2, 0.4, 1.0]),
                   'angles_low':np.pi/180 * np.array(
@@ -50,7 +50,7 @@ setups = {
               },
     'UR5_6dof':
               {
-                  'host': '192.168.2.152',  # put UR5 Controller address here
+                  'host': '192.168.0.25',  # put UR5 Controller address here
                   'end_effector_low': np.array([-0.3, -0.6, 0.5]),
                   'end_effector_high': np.array([0.2, 0.4, 1.0]),
                   'angles_low':np.pi/180 * np.array(

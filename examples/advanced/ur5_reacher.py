@@ -16,7 +16,6 @@ from senseact.envs.ur.reacher_env import ReacherEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 from helper import create_callback
 
-
 def main():
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()

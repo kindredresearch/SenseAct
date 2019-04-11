@@ -79,6 +79,7 @@ class URCommunicator(Communicator):
             port=ur_utils.REALTIME_COMM_CLIENT_INTERFACE_PORT,
             disable_nagle_algorithm=self._disable_nagle_algorithm
         )
+        print(self._sock)
         self._sock.settimeout(0.2)
 
         self._dashboard_sock = URCommunicator.make_connection(
@@ -113,9 +114,12 @@ class URCommunicator(Communicator):
             data = self._sock.recv(ur_utils.REALTIME_COMM_PACKET_SIZE)
             self._recv_time = time.time()  # time after receiving packet
 
+            # To fix CB2 issue
+            data = data.ljust(ur_utils.REALTIME_COMM_PACKET.itemsize, b'\0')
+
             # check and parse received packet
             self.pre_check(data)
-            data = data.ljust(ur_utils.REALTIME_COMM_PACKET.itemsize, b'\0')
+            
             parsed = np.frombuffer(data, dtype=ur_utils.REALTIME_COMM_PACKET)
 
             self.sensor_buffer.write(parsed)

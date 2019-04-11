@@ -11,7 +11,7 @@ from multiprocessing import Array, Value
 
 from senseact.rtrl_base_env import RTRLBaseEnv
 from senseact.devices.ur import ur_utils
-from senseact.devices.ur.ur_setups import setups
+#from senseact.devices.ur.ur_setups import setups
 from senseact.sharedbuffer import SharedBuffer
 from senseact import utils
 
@@ -139,7 +139,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             raise AssertionError
 
         # Task Parameters
-        self._host = setups[setup]['host'] if host is None else host
+        self._host = setup['host'] if host is None else host
         self._obs_history = obs_history
         self._dof = dof
         self._control_type = control_type
@@ -152,9 +152,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._first_deriv_max = first_deriv_max
         self._delay = delay
         if accel_max==None:
-            accel_max = setups[setup]['accel_max']
+            accel_max = setup['accel_max']
         if speed_max==None:
-            speed_max = setups[setup]['speed_max']
+            speed_max = setup['speed_max']
         if self._dof == 6:
             self._joint_indices = [0, 1, 2, 3, 4, 5]
             self._end_effector_indices = [0, 1, 2]
@@ -163,19 +163,19 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._end_effector_indices = [1, 2]
 
         # Arm/Control/Safety Parameters
-        self._end_effector_low = setups[setup]['end_effector_low']
-        self._end_effector_high = setups[setup]['end_effector_high']
-        self._angles_low = setups[setup]['angles_low'][self._joint_indices]
-        self._angles_high = setups[setup]['angles_high'][self._joint_indices]
+        self._end_effector_low = setup['end_effector_low']
+        self._end_effector_high = setup['end_effector_high']
+        self._angles_low = setup['angles_low'][self._joint_indices]
+        self._angles_high = setup['angles_high'][self._joint_indices]
         self._speed_low = -np.ones(self._dof) * speed_max
         self._speed_high = np.ones(self._dof) * speed_max
         self._accel_low = -np.ones(self._dof) * accel_max
         self._accel_high = np.ones(self._dof) * accel_max
 
-        self._box_bound_buffer = setups[setup]['box_bound_buffer']
-        self._angle_bound_buffer = setups[setup]['angle_bound_buffer']
-        self._q_ref = setups[setup]['q_ref']
-        self._ik_params = setups[setup]['ik_params']
+        self._box_bound_buffer = setup['box_bound_buffer']
+        self._angle_bound_buffer = setup['angle_bound_buffer']
+        self._q_ref = setup['q_ref']
+        self._ik_params = setup['ik_params']
 
         # State Variables
         self._q_ = np.zeros((self._obs_history, self._dof))
@@ -185,7 +185,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._pstop_time_ = None
         self._pstop_times_ = []
-        self._safety_mode_ = ur_utils.SafetyModes.NONE
+        self._safety_mode_ = 0
         self._max_pstop = 10
         self._max_pstop_window = 600
         self._clear_pstop_after = 2
@@ -355,6 +355,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
     def _reset_arm(self, reset_angles):
         """Sends reset packet to communicator and sleeps until executed."""
         self._reset_packet[1:1 + 6][self._joint_indices] = reset_angles
+        print(max(self._reset_packet[-2] * 1.5, 2.0))
         self._actuator_comms['UR5'].actuator_buffer.write(self._reset_packet)
         time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
 
@@ -394,11 +395,11 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._current_ = np.array([sensor_window[i]['i_actual'][0] for i in range(index_start,index_end)])
         self._currentt_ = np.array([sensor_window[i]['i_target'][0] for i in range(index_start,index_end)])
-        self._currentc_ = np.array([sensor_window[i]['i_control'][0] for i in range(index_start,index_end)])
+        #self._currentc_ = np.array([sensor_window[i]['i_control'][0] for i in range(index_start,index_end)])
         self._mt_ = np.array([sensor_window[i]['m_target'][0] for i in range(index_start,index_end)])
-        self._voltage_ = np.array([sensor_window[i]['v_actual'][0] for i in range(index_start,index_end)])
-
-        self._safety_mode_ = np.array([sensor_window[i]['safety_mode'][0] for i in range(index_start,index_end)])
+        #self._voltage_ = np.array([sensor_window[i]['v_actual'][0] for i in range(index_start,index_end)])
+        
+        #self._safety_mode_ = np.array([sensor_window[i]['safety_mode'][0] for i in range(index_start,index_end)])
 
         #TODO: should there be checks for safety modes greater than pstop here, and exit if found?
 
@@ -435,9 +436,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             timestamp: a float containing action timestamp
             index: an integer containing action index
         """
-        if self._safety_mode_ == ur_utils.SafetyModes.NORMAL or \
-            self._safety_mode_ == ur_utils.SafetyModes.NONE:
-                self.pstop_time = None
+        if self._safety_mode_ == ur_utils.SafetyModes.NORMAL or self._safety_mode_ == ur_utils.SafetyModes.NONE:
+            self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.REDUCED:
             self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.PROTECTIVE_STOP:
@@ -462,6 +462,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         else:
             print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
             self.close()
+            #raise RuntimeError('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
         self._action_ = action
         action = np.clip(action, self._action_low, self._action_high)
         self.return_point = None   # a point within the box to which to return when out of box bounds
