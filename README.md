@@ -39,6 +39,31 @@ Mahmood et al. (2018b) provide extensive results comparing multiple reinforcemen
 
 # Installation
 
+## Using Docker
+
+This part assumes that you have a working install of Docker. Please see [docker/install](https://docs.docker.com/install/) for the latest install guide.
+
+Then:
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/dti-research/SenseAct.git
+
+# 2. Change directory into the docker folder
+cd SenseAct/docker
+
+# 3. Build Docker image
+docker build -f Dockerfile -t dti-research/senseact .
+```
+
+### Running the examples in the Docker Container
+
+```bash
+docker run ...
+```
+
+## Native Install
+
 SenseAct uses Python3 (>=3.5), and all other requirements are automatically installed via pip.
 
 On Linux and Mac OS X, run the following:
