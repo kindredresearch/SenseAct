@@ -93,6 +93,9 @@ class URCommunicator(Communicator):
         self._recv_time = self._start_time
         self._prev_recv_time = self._start_time
 
+        # DEBUG:
+        print('Start time: {}'.format(self._start_time))
+
         # This flag is specific to the `actuator_handle`, used to stop it from sending
         # actuation command in the event of a lost connection, which is detected and
         # re-established from `_sensor_handler`. This is the only way the sensor and
@@ -274,6 +277,8 @@ class URCommunicator(Communicator):
                     self._recv_time - self._start_time,
                     (self._recv_time - self._prev_recv_time - 0.008) * 1000,
                 ))
+            # DEBUG:
+            print('Start time: {}'.format(self._start_time))
         if len(data) != ur_utils.REALTIME_COMM_PACKET.itemsize:
             print('Warning: incomplete packet from UR')
             return
