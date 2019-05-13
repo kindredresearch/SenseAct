@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip3 install --upgrade pip
 
+RUN pip3 install pyyaml
+
 RUN git clone https://github.com/dti-research/SenseAct && cd SenseAct && pip3 install -e .
 
 # Exit 0 hack for forced MuJoCo installation which is obviously missing.
