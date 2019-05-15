@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 import socket
 import time
+import sys
 import logging
 import numpy as np
 from senseact.communicator import Communicator
