@@ -7,13 +7,18 @@ import numpy as np
 import time
 import gym
 import sys
+import logging
 from multiprocessing import Array, Value
 
 from senseact.rtrl_base_env import RTRLBaseEnv
 from senseact.devices.ur import ur_utils
-#from senseact.devices.ur.ur_setups import setups
 from senseact.sharedbuffer import SharedBuffer
 from senseact import utils
+
+# Setup logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+                    level=logging.DEBUG,
+                    stream=sys.stdout)
 
 
 class ReacherEnv(RTRLBaseEnv, gym.core.Env):
@@ -135,7 +140,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._episode_length_step = int(episode_length_time / dt)
         else:
             #TODO: should we allow a continuous behaviour case here, with no episodes?
-            print("episode_length_time or episode_length_step needs to be set")
+            logging.debug("episode_length_time or episode_length_step needs to be set")
             raise AssertionError
 
         # Task Parameters
@@ -317,7 +322,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         Moves the arm to either fixed reference or random position and
         generates a new target within a safety box.
         """
-        print("Resetting")
+        logging.debug("Resetting")
 
         self._q_target_, x_target = self._pick_random_angles_()
         np.copyto(self._x_target_, x_target)
@@ -339,7 +344,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         )
         np.copyto(self._shared_rstate_array_, np.frombuffer(rand_state_array, dtype=rand_state_array_type))
 
-        print("Reset done")
+        logging.debug("Reset done")
 
     def _pick_random_angles_(self):
         """Generates a set of random angle positions for each joint."""
@@ -355,7 +360,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
     def _reset_arm(self, reset_angles):
         """Sends reset packet to communicator and sleeps until executed."""
         self._reset_packet[1:1 + 6][self._joint_indices] = reset_angles
-        print(max(self._reset_packet[-2] * 1.5, 2.0))
+        logging.debug(max(self._reset_packet[-2] * 1.5, 2.0))
         self._actuator_comms['UR5'].actuator_buffer.write(self._reset_packet)
         time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
 
@@ -442,25 +447,25 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.PROTECTIVE_STOP:
             if self._pstop_time_ is None:
-                print("Encountered p-stop")
+                logging.debug("Encountered p-stop")
                 self._pstop_time_ = time.time()
                 self._pstop_times_.append(self._pstop_time_)
                 # Check to see if too many p-stops occurred within a short time window
                 if len(self._pstop_times_) > self._max_pstop:
                     if self._pstop_time_ - self._pstop_times_[-self._max_pstop] < self._max_pstop_window:
-                        print("Too many p-stops encountered, closing environment")
-                        print('Greater than {0} p-stops encountered within {1} seconds'.format(
+                        logging.debug("Too many p-stops encountered, closing environment")
+                        logging.debug('Greater than {0} p-stops encountered within {1} seconds'.format(
                                     self._max_pstop, self._max_pstop_window))
                         self.close()
                         sys.exit(1)
             elif time.time() > self._pstop_time_ + self._clear_pstop_after:  # XXX
-                print("Unlocking p-stop")
+                logging.debug("Unlocking p-stop")
                 self._actuation_packet_['UR5'] = self._pstop_unlock_packet
                 return
             self._actuation_packet_['UR5'] = self._nothing_packet
             return
         else:
-            print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
+            logging.debug('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
             self.close()
             #raise RuntimeError('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
         self._action_ = action
@@ -527,7 +532,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             # we are outside the bounds and return point wasn't computed yet
             self.escaped_the_box = True
             if inside_bound and not inside_angle_bound:
-                print("outside of angle bound")
+                logging.debug("outside of angle bound")
                 self.rel_indices = self._joint_indices
                 self._cmd_ = self._q_[0][self._joint_indices]
                 self._cmd_ = np.clip(self._cmd_, self._angles_low + self._angle_bound_buffer,
@@ -539,7 +544,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 self.init_boundary_speed = np.max(np.abs(self._qd_.copy()))
 
             else:
-                print("outside box bound")
+                logging.debug("outside box bound")
                 xyz = np.clip(xyz, self._end_effector_low + self._box_bound_buffer,
                               self._end_effector_high - self._box_bound_buffer)
                 mat[:3, 3] = xyz
@@ -595,7 +600,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             if self.return_point is None:
                 # we are outside the bounds and return point wasn't computed yet
                 self.escaped_the_box = True
-                print("outside box bound")
+                logging.debug("outside box bound")
                 xyz = np.clip(xyz, self._end_effector_low + self._box_bound_buffer,
                               self._end_effector_high - self._box_bound_buffer)
                 mat[:3, 3] = xyz
@@ -642,7 +647,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             # a point within the box to which we will be returning
             affected_joints = np.where(clipped_pos != cur_pos)
             if not self.angle_return_point:
-                print("outside of angle bound on joints %r" % (list(affected_joints[0])))
+                logging.debug("outside of angle bound on joints %r" % (list(affected_joints[0])))
                 self.angle_return_point = True
             self._cmd_[affected_joints] = np.sign(clipped_pos - cur_pos)[affected_joints]*np.max(np.abs(self._cmd_))
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_

@@ -5,11 +5,17 @@
 # LICENSE file in the root directory of this source tree.
 import socket
 import time
+import logging
 import numpy as np
 from senseact.communicator import Communicator
 from senseact.devices.ur import ur_utils
 from senseact.sharedbuffer import SharedBuffer
 from threading import Lock
+
+# Setup logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+                    level=logging.DEBUG,
+                    stream=sys.stdout)
 
 class URCommunicator(Communicator):
     """Communicator class for UR5 robot.
@@ -79,7 +85,7 @@ class URCommunicator(Communicator):
             port=ur_utils.REALTIME_COMM_CLIENT_INTERFACE_PORT,
             disable_nagle_algorithm=self._disable_nagle_algorithm
         )
-        print(self._sock)
+        logging.debug(self._sock)
         self._sock.settimeout(0.2)
 
         self._dashboard_sock = URCommunicator.make_connection(
@@ -94,7 +100,7 @@ class URCommunicator(Communicator):
         self._prev_recv_time = self._start_time
 
         # DEBUG:
-        print('Start time: {}'.format(self._start_time))
+        logging.debug('Start time: {}'.format(self._start_time))
 
         # This flag is specific to the `actuator_handle`, used to stop it from sending
         # actuation command in the event of a lost connection, which is detected and
@@ -134,9 +140,9 @@ class URCommunicator(Communicator):
         except (IOError, ValueError) as e:
             if isinstance(e, ValueError):
                 # May happen with weak wireless connection
-                print('', e, "Could not convert data.")
+                logging.debug('', e, "Could not convert data.")
             else:
-                print('', e, ': Lost socket to UR, going into reconnect loop')
+                logging.debug('', e, ': Lost socket to UR, going into reconnect loop')
             self._stop = True
             time.sleep(ur_utils.ACTUATOR_DT*2)  # to let _actuator_handler thread return
             self._sock.close()
@@ -152,7 +158,7 @@ class URCommunicator(Communicator):
             self._stop = False
         except Exception as e:
             import sys
-            print("Unexpected error:", e, sys.exc_info()[0])
+            logging.debug("Unexpected error:", e, sys.exc_info()[0])
             raise
 
     def _actuator_handler(self):
@@ -255,7 +261,7 @@ class URCommunicator(Communicator):
                     a=recent_actuation[1]
                 )
             elif recent_actuation[0] == ur_utils.COMMANDS['UNLOCK_PSTOP']['id']:
-                print("Unlocking p-stop")
+                logging.debug("Unlocking p-stop")
                 self._dashboard_sock.send('unlock protective stop\n'.encode('ascii'))
                 return
             elif recent_actuation[0] == ur_utils.COMMANDS['NOTHING']['id']:
@@ -272,15 +278,15 @@ class URCommunicator(Communicator):
             data: a numpy array with sensory information received from UR5
         """
         if self._recv_time > self._prev_recv_time + 1.1 / 125:
-            print(
+            logging.debug(
                 '{}: Hiccup of {:.2f}ms overhead between UR packets)'.format(
                     self._recv_time - self._start_time,
                     (self._recv_time - self._prev_recv_time - 0.008) * 1000,
                 ))
             # DEBUG:
-            print('Start time: {}'.format(self._start_time))
+            logging.debug('Start time: {}'.format(self._start_time))
         if len(data) != ur_utils.REALTIME_COMM_PACKET.itemsize:
-            print('Warning: incomplete packet from UR')
+            logging.debug('Warning: incomplete packet from UR')
             return
 
     @staticmethod
@@ -308,13 +314,13 @@ class URCommunicator(Communicator):
                 if disable_nagle_algorithm:
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
             except OSError as msg:
-                print(msg)
+                logging.debug(msg)
                 sock = None
                 continue
             try:
                 sock.connect(sock_addr)
             except OSError as msg:
-                print(msg)
+                logging.debug(msg)
                 sock.close()
                 sock = None
                 continue
