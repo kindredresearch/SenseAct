@@ -168,10 +168,17 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._end_effector_indices = [1, 2]
 
         # Arm/Control/Safety Parameters
-        self._end_effector_low = setup['end_effector_low']
-        self._end_effector_high = setup['end_effector_high']
-        self._angles_low = setup['angles_low'][self._joint_indices]
-        self._angles_high = setup['angles_high'][self._joint_indices]
+        self._end_effector_low = np.array(setup['end_effector_low'])
+        self._end_effector_high = np.array(setup['end_effector_high'])
+        
+        self._angles_low = np.array(setup['angles_low'])
+        self._angles_low = np.pi/180 * self._angles_low
+        self._angles_low = self._angles_low[self._joint_indices]
+
+        self._angles_high = np.array(setup['angles_high'])
+        self._angles_high = np.pi/180 * self._angles_high
+        self._angles_high = self._angles_high[self._joint_indices]
+
         self._speed_low = -np.ones(self._dof) * speed_max
         self._speed_high = np.ones(self._dof) * speed_max
         self._accel_low = -np.ones(self._dof) * accel_max
@@ -179,7 +186,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._box_bound_buffer = setup['box_bound_buffer']
         self._angle_bound_buffer = setup['angle_bound_buffer']
-        self._q_ref = setup['q_ref']
+        self._q_ref = np.array(setup['q_ref'])
         self._ik_params = setup['ik_params']
 
         # State Variables
@@ -507,6 +514,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             self._speedj_packet[-2] = self._accel_val_
             self._actuation_packet_['UR5'] = self._speedj_packet
+        
         if self._control_type in ["acceleration", "velocity"]:
             self._handle_bounds_speedj()
         elif self._control_type == "position":
