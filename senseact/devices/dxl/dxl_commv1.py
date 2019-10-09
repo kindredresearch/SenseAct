@@ -44,7 +44,7 @@ def read_a_block(port, idn, read_block, read_wait_time):
     """Reads a block of sensor values from dxl device.
 
     Args:
-        port: An instance of Serial
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         read_block: An instance of Contiguous Registers (defined in dxl_reg) containing the block of registers to read
         read_wait_time: A float representing time (in seconds) to wait before reading the buffer
@@ -60,7 +60,7 @@ def read_a_block_vals(port, idn, read_block, read_wait_time):
     """ Reads a block of sensor values from dxl device.
 
     Args:
-        port: An instance of Serial
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         read_block: An instance of Contiguous Registers (defined in dxl_reg) containing the block of registers to read
         read_wait_time: A float representing time (in seconds) to wait before reading the buffer
@@ -140,7 +140,7 @@ def loop_until_written(port, dxl_id, packet, read_wait_time=0.0001):
     """Loop until instruction packet is written in the DXL control table
 
     Args:
-        port: An instance of Serial
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         packet: A bytearray representing the instruction packet
         read_wait_time: A float representing time (in seconds) to wait before reading the buffer

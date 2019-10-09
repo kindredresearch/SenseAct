@@ -94,7 +94,7 @@ def read_a_block_vals(port, idn, read_block, read_wait_time=0.00001):
     """ Reads a block of sensor values from dxl device.
 
     Args:
-        port: Dynamixel portHandler object
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         read_block: An instance of Contiguous Registers (defined in dxl_reg) containing the block of registers to read
         read_wait_time: A float representing time (in seconds) to wait before reading the buffer
@@ -123,7 +123,7 @@ def read2bytes(port, idn, address):
     """ Read 2 bytes from the control table of a DXL with id = idn, starting at the specified address
 
     Args:
-        port: Dynamixel portHandler object
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         address: An integer representing the register address in the DXL control table
 
@@ -136,7 +136,7 @@ def read1byte(port, idn, address):
     """ Read 1 byte from the control table of a DXL with id = idn, starting at the specified address
 
     Args:
-        port: Dynamixel portHandler object
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         address: An integer representing the register address in the DXL control table
 
@@ -183,7 +183,7 @@ def write1byte(port, idn, address, data):
     """ Write 1 byte to the DXL control table
 
         Args:
-            port: Dynamixel portHandler object
+            port: Dynamixel portHandler object returned by make_connection
             idn: An integer representing the DXL ID number
             address: An integer representing the register address in the DXL control table
             data: An integer. Data to be written to the register
@@ -194,7 +194,7 @@ def write2bytes(port, idn, address, data):
     """ Write 2 bytes to the DXL control table
 
         Args:
-            port: Dynamixel portHandler object
+            port: Dynamixel portHandler object returned by make_connection
             idn: An integer representing the DXL ID number
             address: An integer representing the register address in the DXL control table
             data: An integer. Data to be written to the register
@@ -205,7 +205,7 @@ def loop_until_written(port, dxl_id, packet, read_wait_time=0.00001):
     """ Loop until instruction packet is written in the DXL control table
 
     Args:
-        port: Dynamixel portHandler object
+        port: Dynamixel portHandler object returned by make_connection
         idn: An integer representing the DXL ID number
         packet: A tuple - (address of register, list of values to be written, width of the register in bytes)
         read_wait_time: A float representing time (in seconds) to wait before reading the buffer
@@ -233,7 +233,7 @@ def sync_write(port, block, data):
     ID should be transmitted as Broadcasting ID.
 
         Args:
-            port: Dynamixel portHandler object
+            port: Dynamixel portHandler object returned by make_connection
             block: An instance of Contiguous Registers (defined in dxl_reg) containing the register to write to
             data: A zip of 2 lists - dxl_ids and values.
     """
@@ -262,7 +262,7 @@ def init_bulk_read(port):
     """ Initialize groupBulkRead Structs
 
         Args:
-            port: Dynamixel portHandler object
+            port: Dynamixel portHandler object returned by make_connection
 
         Returns:
             An instance of dynamixel.groupBulkRead defined in C
@@ -280,7 +280,7 @@ def bulk_read(port, blocks, dxl_ids, group_num=None):
     parameter will be processed.
 
         Args:
-            port: Dynamixel portHandler object
+            port: Dynamixel portHandler object returned by make_connection
             blocks: A list containing blocks of contiguous registers
             dxl_ids: A list containing DXL id numbers
             group_num: An instance of dynamixel.groupBulkRead defined in C
