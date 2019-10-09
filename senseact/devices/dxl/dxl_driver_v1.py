@@ -19,7 +19,7 @@ import senseact.lib.DynamixelSDK.python.dynamixel_functions_py.dynamixel_functio
 from sys import platform
 
 PROTOCOL_VERSION = 1
-COMM_SUCCESS     = 0
+COMM_SUCCESS = 0
 
 
 def make_connection(baudrate, timeout, port_str='None'):
@@ -37,19 +37,32 @@ def make_connection(baudrate, timeout, port_str='None'):
         An instance of dynamixel.portHandler defined in C
     """
 
-    if port_str == 'None':
+    if (port_str is None) or (port_str == 'None'):
+        check_ports = ["/dev/ttyUSB*", "/dev/ttyACM*"]
+
         if platform == 'darwin':
-            port_str = glob.glob('/dev/tty.usb*')[0]
-        elif platform == 'linux' or platform == 'linux2':
-            port_str = glob.glob('/dev/ttyACM*')[0]
-        else:
-            print("Unrecognized platform: ", platform)
-            sys.exit(1)
+            check_ports = ["/dev/tty.usb*"] + check_ports
+    elif type(port_str) == str:
+        check_ports = [port_str]
+    else:
+        raise TypeError("port_str should be string")
+
+    found_port = None
+    for potential_port in check_ports:
+        found_ports = glob.glob(potential_port)
+        if len(found_ports) > 0:
+            found_port = found_ports[0]
+            break
+
+    if found_port is None:
+        raise IOError("Could not find specified port: {}".format(port_str))
+
+    print("Attempting to open device {}".format(found_port))
 
     # Initialize PortHandler Structs
     # Set the port path
     # Get methods and members of PortHandlerLinux
-    port_num = dynamixel.portHandler(port_str.encode('utf-8'))
+    port_num = dynamixel.portHandler(found_port.encode('utf-8'))
 
     # Initialize PacketHandler Structs
     dynamixel.packetHandler()
@@ -67,13 +80,14 @@ def make_connection(baudrate, timeout, port_str='None'):
         raise IOError("Failed to change the baudrate!")
 
     # Set port timeout
-    timeout = int(timeout*1000)     # Convert to milli-seconds
+    timeout = int(timeout * 1000)  # Convert to milli-seconds
     if dynamixel.setPacketTimeoutMSec(port_num, timeout):
         print("Timeout set to: {}!".format(timeout))
     else:
         raise IOError("Failed to change the timeout!")
 
     return port_num
+
 
 def read_a_block(port, idn, read_block, read_wait_time):
     """ Reads a block of sensor values from dxl device.
@@ -89,6 +103,7 @@ def read_a_block(port, idn, read_block, read_wait_time):
     """
     vals = read_a_block_vals(port, idn, read_block, read_wait_time)
     return {reg.name: val for reg, val in zip(read_block, vals)}
+
 
 def read_a_block_vals(port, idn, read_block, read_wait_time=0.00001):
     """ Reads a block of sensor values from dxl device.
@@ -119,6 +134,7 @@ def read_a_block_vals(port, idn, read_block, read_wait_time=0.00001):
         vals.append(data)
     return read_block.vals_from_data(vals)
 
+
 def read2bytes(port, idn, address):
     """ Read 2 bytes from the control table of a DXL with id = idn, starting at the specified address
 
@@ -132,6 +148,7 @@ def read2bytes(port, idn, address):
     """
     return dynamixel.read2ByteTxRx(port, PROTOCOL_VERSION, idn, address)
 
+
 def read1byte(port, idn, address):
     """ Read 1 byte from the control table of a DXL with id = idn, starting at the specified address
 
@@ -144,6 +161,7 @@ def read1byte(port, idn, address):
         An int or float value read from the specified address of a DXL with id = idn
     """
     return dynamixel.read1ByteTxRx(port, PROTOCOL_VERSION, idn, address)
+
 
 def packet_write_buffer(idn, block, buf):
     """ Returns a write packet from a payload buffer.
@@ -163,6 +181,7 @@ def packet_write_buffer(idn, block, buf):
     width = block.width
     return (reg0, buf, width)
 
+
 def packet_read(idn, reg0, width):
     """ Create an instruction packet to read data from the DXL control table.
 
@@ -179,6 +198,7 @@ def packet_read(idn, reg0, width):
     """
     return (idn, reg0, width)
 
+
 def write1byte(port, idn, address, data):
     """ Write 1 byte to the DXL control table
 
@@ -190,6 +210,7 @@ def write1byte(port, idn, address, data):
     """
     dynamixel.write1ByteTxRx(port, PROTOCOL_VERSION, idn, address, data)
 
+
 def write2bytes(port, idn, address, data):
     """ Write 2 bytes to the DXL control table
 
@@ -200,6 +221,7 @@ def write2bytes(port, idn, address, data):
             data: An integer. Data to be written to the register
     """
     dynamixel.write2ByteTxRx(port, PROTOCOL_VERSION, idn, address, data)
+
 
 def loop_until_written(port, dxl_id, packet, read_wait_time=0.00001):
     """ Loop until instruction packet is written in the DXL control table
@@ -222,6 +244,7 @@ def loop_until_written(port, dxl_id, packet, read_wait_time=0.00001):
         print(dynamixel.getTxRxResult(PROTOCOL_VERSION, dxl_comm_result))
     elif dxl_error != 0:
         print(dynamixel.getRxPacketError(PROTOCOL_VERSION, dxl_error))
+
 
 def sync_write(port, block, data):
     """ Write to multiple DXLs in synchronized fashion
@@ -258,6 +281,7 @@ def sync_write(port, block, data):
     # Clear syncwrite parameter storage
     dynamixel.groupSyncWriteClearParam(group_num)
 
+
 def init_bulk_read(port):
     """ Initialize groupBulkRead Structs
 
@@ -269,6 +293,7 @@ def init_bulk_read(port):
     """
     group_num = dynamixel.groupBulkRead(port, PROTOCOL_VERSION)
     return group_num
+
 
 def bulk_read(port, blocks, dxl_ids, group_num=None):
     """ Read from multiple DXL MX-64s sending one bulk read packet
@@ -300,7 +325,7 @@ def bulk_read(port, blocks, dxl_ids, group_num=None):
     if not isinstance(dxl_ids, list):
         dxl_ids = [dxl_ids]
 
-    assert len(blocks)==len(dxl_ids)
+    assert len(blocks) == len(dxl_ids)
 
     # Add parameter storage for Dynamixel#1 present position value
     for i, (id, block) in enumerate(zip(dxl_ids, blocks)):
@@ -334,9 +359,11 @@ def bulk_read(port, blocks, dxl_ids, group_num=None):
         vals_dict[i] = data
     return vals_dict
 
+
 def clear_port(port):
     """ Clears device port. """
     dynamixel.clearPort(port)
+
 
 def close(port):
     """ Closes device port. """

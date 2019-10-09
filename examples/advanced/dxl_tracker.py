@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 # Copyright (c) 2018, The SenseAct Authors.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+import argparse
 import time
 import copy
 
@@ -16,7 +18,7 @@ from senseact.utils import tf_set_seeds, NormalizedEnv
 from multiprocessing import Process, Value, Manager
 from helper import create_callback
 
-def main():
+def main(port, id, baud):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -24,8 +26,9 @@ def main():
 
     # Create DXL Tracker1D environment
     env = DxlTracker1DEnv(setup='dxl_tracker_default',
-                          idn=1,
-                          baudrate=1000000,
+                          dxl_dev_path=port,
+                          idn=id,
+                          baudrate=baud,
                           obs_history=1,
                           dt=0.04,
                           gripper_dt=0.01,
@@ -166,7 +169,13 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
         count += 1
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=str, default=None)
+    parser.add_argument("--id", type=int, default=1)
+    parser.add_argument("--baud", type=int, default=1000000)
+    args = parser.parse_args()
+
+    main(**args.__dict__)
 
 
 
