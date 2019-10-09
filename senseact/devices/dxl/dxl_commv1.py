@@ -28,16 +28,29 @@ def make_connection(baudrate, timeout, port_str='None'):
     Returns:
         An instance of Serial (i.e., an open serial port)
     """
-    if port_str == 'None':
-        if platform == 'darwin':
-            port_str = glob.glob('/dev/tty.usb*')[0]
-        elif platform == 'linux' or platform == 'linux2':
-            port_str = glob.glob('/dev/ttyACM*')[0]
-        else:
-            print("Unrecognized platform: ", platform)
-            sys.exit(1)
+    if (port_str is None) or (port_str == 'None'):
+        check_ports = ["/dev/ttyUSB*", "/dev/ttyACM*"]
 
-    return serial.Serial(port=port_str, baudrate=baudrate, timeout=timeout)
+        if platform == 'darwin':
+            check_ports = ["/dev/tty.usb*"] + check_ports
+    elif type(port_str) == str:
+        check_ports = [port_str]
+    else:
+        raise TypeError("port_str should be string")
+
+    found_port = None
+    for potential_port in check_ports:
+        found_ports = glob.glob(potential_port)
+        if len(found_ports) > 0:
+            found_port = found_ports[0]
+            break
+
+    if found_port is None:
+        raise IOError("Could not find specified port: {}".format(port_str))
+
+    print("Attempting to open device {}".format(found_port))
+
+    return serial.Serial(port=found_port, baudrate=baudrate, timeout=timeout)
 
 
 def read_a_block(port, idn, read_block, read_wait_time):
