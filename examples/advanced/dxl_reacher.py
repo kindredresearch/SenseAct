@@ -43,7 +43,7 @@ def main(port, id, baud):
                           target_type='position',
                           reset_type='zero',
                           reward_type='linear',
-                          use_ctypes_driver=False,
+                          use_ctypes_driver=True,
                           random_state=rand_state
                           )
 
