@@ -10,6 +10,18 @@ import senseact.devices.dxl.dxl_commv1 as no_ctypes_driver
 import senseact.devices.dxl.dxl_driver_v1 as ctypes_driver
 from senseact.devices.dxl import dxl_mx64
 
+"""
+First create a driver:
+
+driver = get_driver()
+
+Then open a port:
+
+port = make_connection(driver)
+
+Then you can use the driver and port to access the different utility functions.
+"""
+
 
 def get_driver(use_ctypes_driver=True):
     if use_ctypes_driver:
