@@ -21,6 +21,8 @@ from sys import platform
 PROTOCOL_VERSION = 1
 COMM_SUCCESS = 0
 
+is_ctypes_driver = True
+
 
 def make_connection(baudrate, timeout, port_str='None'):
     """ Establishes serial connection with a dxl device.
