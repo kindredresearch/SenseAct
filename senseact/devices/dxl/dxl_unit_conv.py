@@ -72,7 +72,7 @@ class Affine(UnitConversion):
 
 
 class AngleVelRange(UnitConversion):
-    """Class provides methods for velocity convertion.
+    """Class provides methods for velocity conversion.
 
     Velocity registers on AX12 and AX18 servos encode present_speed.
     """
