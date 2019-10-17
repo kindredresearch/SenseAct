@@ -8,9 +8,17 @@ Run [basic/sim_double_pendulum.py](basic/sim_double_pendulum.py) to start a simp
 
 ## Advanced
 
-We also provided examples that use the OpenAI Baselines implementation of Trust Region Policy Optimization (TRPO) and Proximal Policy Optimization (PPO) for actual learning. To run these examples, first install the Baselines prerequisites shown on OpenAI Baselines [README](https://github.com/openai/baselines), then install Baselines version 0.1.5 by running:
+We also provided examples that use the OpenAI Baselines implementation of Trust Region Policy Optimization (TRPO) and Proximal Policy Optimization (PPO) for actual learning. 
+To run these examples, first install the Baselines prerequisites shown on OpenAI Baselines [README](https://github.com/openai/baselines).
+At present SenseAct depends on an older version of baselines. We have created a specific fork for this dependency.
+Further, this version has removed the dependency on Mujoco. Additionally, the examples do not work with TensorFlow 2.0+.
 
-`pip install baselines==0.1.5`
+```
+pip install tensorflow==1.5
+git clone https://github.com/csherstan/baselines.git
+cd baselines
+pip install -e .
+```
 
 Each examples also require its corresponding hardware, with the exception of [advanced/sim_double_pendulum.py](advanced/sim_double_pendulum.py), which requires mujoco 1.50.
 
