@@ -65,7 +65,7 @@ def random_torque(driver, port, idn):
         actions.append(action)
         currents.append(vals_dict['current'])
         times.append(time.time() - t1)
-    dxl.write_torque(driver, port, 0)
+    dxl.write_torque(driver, port, idn, 0)
     print(np.mean(times))
     print(currents[:10])
     plt.xcorr(currents, actions)
@@ -88,7 +88,22 @@ def sync_write_test(driver, port, dxl_ids):
         dxl_ids: A list of ints containing DXL id numbers
     """
     if driver.is_ctypes_driver:
-        goals = [2000] * len(dxl_ids)
+        count = len(dxl_ids)
+        goals = [np.random.randint(0, 2000)] * count
+
+        joint_mode_block = dxl_mx64.MX64.subblock('torque_control_mode_enable', 'torque_control_mode_enable',
+                                                  ret_dxl_type=True)
+
+        driver.sync_write(port, joint_mode_block, zip(dxl_ids, [0] * count))
+
+        low_angle_limit_block = dxl_mx64.MX64.subblock('angle_limit_cw', 'angle_limit_cw', ret_dxl_type=True)
+        driver.sync_write(port, low_angle_limit_block, zip(dxl_ids, [0] * count))
+
+        high_angle_limit_block = dxl_mx64.MX64.subblock('angle_limit_ccw', 'angle_limit_ccw', ret_dxl_type=True)
+        driver.sync_write(port, high_angle_limit_block, zip(dxl_ids, [2048] * count))
+
+        speed_block = dxl_mx64.MX64.subblock('moving_speed', 'moving_speed', ret_dxl_type=True)
+        driver.sync_write(port, speed_block, zip(dxl_ids, [1000] * count))
 
         goal_block = dxl_mx64.MX64.subblock('goal_pos', 'goal_pos', ret_dxl_type=True)
 
@@ -110,9 +125,10 @@ def bulk_read_test(driver, port, dxl_ids):
     read command for multiple motors and reads the contiguous block of registers.
 
     Args:
-        dxl_ids: A list of ints containing DXL id numbers
+        dxl_ids: A list of ints containing DXL id numbers. Should only contain 2 ids.
     """
     if driver.is_ctypes_driver:
+        assert (len(dxl_ids) == 2)
         goal_block = dxl_mx64.MX64.subblock('goal_pos', 'goal_pos', ret_dxl_type=True)
 
         pos_block = dxl_mx64.MX64.subblock('present_pos', 'present_pos', ret_dxl_type=True)

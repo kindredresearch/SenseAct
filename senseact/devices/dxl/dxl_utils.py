@@ -28,8 +28,8 @@ Joint mode:
 Joint mode allows you to specify a position for the motor to move to. The Dynamixel will use its internal 
 PID controller to move to the target position. To use joint mode:
 
-write_joint_mode
-write_pos
+write_joint_mode(driver, port, 1)
+write_pos(driver, port, 1, 2.0)
 
 Boundaries can be set directly in the write_joint_mode call or in write_angle_limit.
 Speed can be set directly in the write_joint_mode call or in write_speed.
@@ -43,7 +43,7 @@ to achieve thjis.
 
 Use wheel mode as follows.
 
-write_wheel_mode
+write_wheel_mode ()
 write_speed
 stop
 
