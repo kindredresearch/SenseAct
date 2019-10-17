@@ -18,6 +18,8 @@ from senseact.devices.dxl.utils import Instructions, MalformedStatus
 import numpy as np
 from sys import platform
 
+is_ctypes_driver = False
+
 def make_connection(baudrate, timeout, port_str='None'):
     """Establishes a serial connection with a dxl device.
 
