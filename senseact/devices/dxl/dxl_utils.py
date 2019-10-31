@@ -28,7 +28,7 @@ Joint mode:
 Joint mode allows you to specify a position for the motor to move to. The Dynamixel will use its internal 
 PID controller to move to the target position. To use joint mode:
 
-write_joint_mode(driver, port, 1)
+set_joint_mode(driver, port, 1)
 write_pos(driver, port, 1, 2.0)
 
 Boundaries can be set directly in the write_joint_mode call or in write_angle_limit.
@@ -36,14 +36,14 @@ Speed can be set directly in the write_joint_mode call or in write_speed.
 The motor can be stopped by calling stop, but you will need to call write_joint_mode again to return to joint_mode.
 
 
-Wheel mode:
+Speed mode:
 
-Wheel mode allows you to make the motor turn continuously as a target speed. The motor will use its PID controller
+Speed mode allows you to make the motor turn continuously as a target speed. The motor will use its PID controller
 to achieve thjis.
 
-Use wheel mode as follows.
+Use speed mode as follows.
 
-write_wheel_mode ()
+set_speed_mode()
 write_speed
 stop
 
@@ -53,9 +53,7 @@ Torque mode allows you to control the motor by providing a target load.
 
 To use torque mode:
 
-write_wheel_mode
-write_torque_mode_enable
-write_torque_enable
+set_torque_mode
 write_torque
 
 stop
@@ -128,6 +126,62 @@ def read_register(driver, port, idn, reg_name):
     """
     read_block = dxl_mx64.MX64.subblock(reg_name, reg_name, ret_dxl_type=driver.is_ctypes_driver)
     return read(driver, port, idn, read_block)
+
+
+def set_joint_mode(driver, port, idn, angle_low=-pi, angle_high=pi, speed=None):
+    """
+    Sets the motor into joint mode. Joint mode has fixed rotation limits.
+    It appears that if goal_pos and present_pos are not aligned prior to this call that
+    they will be aligned internally after this call. So it won't suddenly jump.
+    :param driver: Driver used. Returned by get_driver()
+    :param port: Port return by make_connection
+    :param idn: Motor's id (integer)
+    :param angle_low: min is -pi (fully CW)
+    :param angle_high: max is pi (fully CCW)
+    """
+    write_torque_mode_enable(driver, port, idn, 0)
+    write_angle_limit(driver, port, idn, angle_low, angle_high)
+
+    if speed is not None:
+        write_speed(driver, port, idn, speed)
+
+
+def set_speed_mode(driver, port, idn):
+    """
+    Sets operation to speed mode
+    :param driver: Driver used. Returned by get_driver()
+    :param port: Port returned by make_connection
+    :param idn: Motor id
+    """
+    set_wheel_mode(driver, port, idn)
+    write_torque_mode_enable(driver, port, idn, 0)
+
+
+def set_torque_mode(driver, port, idn):
+    """
+    Puts the motor into torque mode
+    :param driver: Driver used. Returned by get_driver()
+    :param port: Port returned by make_connection
+    :param idn: Motor id
+    :return:
+    """
+    set_wheel_mode(driver, port, idn)
+    write_torque_mode_enable(driver, port, idn, 1)
+    write_torque_enable(driver, port, idn, 1)
+
+
+def set_wheel_mode(driver, port, idn):
+    """ Sets the DXL to wheel mode (i.e., infinite turns)
+
+    Wheel mode can be initialized by setting angle_limit_cw and
+    angle_limit_ccw registers to zero in the control table
+
+    :param driver: Driver used. Returned by get_driver()
+    :param port: Port return by make_connection
+    :param idn: Motor's id (integer)
+    """
+    write_to_register(driver, port, idn, 'angle_limit_cw', -pi)
+    write_to_register(driver, port, idn, 'angle_limit_ccw', -pi)
 
 
 def write_to_register(driver, port, idn, reg_name, val):
@@ -216,20 +270,6 @@ def write_torque(driver, port, idn, current):
     write_to_register(driver, port, idn, 'goal_torque', current)
 
 
-def write_wheel_mode(driver, port, idn):
-    """ Sets the DXL to wheel mode (i.e., infinite turns)
-
-    Wheel mode can be initialized by setting angle_limit_cw and
-    angle_limit_ccw registers to zero in the control table
-
-    :param driver: Driver used. Returned by get_driver()
-    :param port: Port return by make_connection
-    :param idn: Motor's id (integer)
-    """
-    write_to_register(driver, port, idn, 'angle_limit_cw', -pi)
-    write_to_register(driver, port, idn, 'angle_limit_ccw', -pi)
-
-
 def write_speed(driver, port, idn, speed):
     """
 
@@ -240,24 +280,6 @@ def write_speed(driver, port, idn, speed):
     :return:
     """
     write_to_register(driver, port, idn, 'moving_speed', speed)
-
-
-def write_joint_mode(driver, port, idn, angle_low=-pi, angle_high=pi, speed=None):
-    """
-    Sets the motor into joint mode. Joint mode has fixed rotation limits.
-    It appears that if goal_pos and present_pos are not aligned prior to this call that
-    they will be aligned internally after this call. So it won't suddenly jump.
-    :param driver: Driver used. Returned by get_driver()
-    :param port: Port return by make_connection
-    :param idn: Motor's id (integer)
-    :param angle_low: min is -pi (fully CW)
-    :param angle_high: max is pi (fully CCW)
-    """
-    write_torque_mode_enable(driver, port, idn, 0)
-    write_angle_limit(driver, port, idn, angle_low, angle_high)
-
-    if speed is not None:
-        write_speed(driver, port, idn, speed)
 
 
 def write_id(driver, port, current_id, new_id):
@@ -310,8 +332,6 @@ def stop(driver, port, idn):
     :param idn: Motor id
     :return:
     """
-    write_wheel_mode(driver, port, idn)
+    set_wheel_mode(driver, port, idn)
     write_speed(driver, port, idn, 0)
     write_torque(driver, port, idn, 0)
-
-
