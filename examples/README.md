@@ -14,7 +14,7 @@ At present SenseAct depends on an older version of baselines. We have created a 
 Further, this version has removed the dependency on Mujoco. Additionally, the examples do not work with TensorFlow 2.0+.
 
 ```
-pip install tensorflow==1.5
+pip install tensorflow==1.15
 git clone https://github.com/csherstan/baselines.git
 cd baselines
 pip install -e .
