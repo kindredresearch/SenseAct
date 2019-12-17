@@ -16,9 +16,10 @@ from baselines.ppo1.mlp_policy import MlpPolicy
 from senseact.envs.ur.reacher_env import ReacherEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 from helper import create_callback
+import argparse
 
 
-def main():
+def main(ip):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -27,7 +28,7 @@ def main():
     # Create UR5 Reacher2D environment
     env = ReacherEnv(
             setup="UR5_default",
-            host=None,
+            host=ip,
             dof=2,
             control_type="velocity",
             target_type="position",
@@ -183,4 +184,8 @@ def plot_ur5_reacher(env, batch_size, shared_returns, plot_running):
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ip", default=None, help="IP address of the UR5")
+    args = parser.parse_args()
+
+    main(**args.__dict__)
