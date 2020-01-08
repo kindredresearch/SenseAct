@@ -19,22 +19,31 @@ from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
 import glob
+import importlib
+from senseact.devices.dxl import dxl_communicator as gcomm
 
 
-def main(port, id, baud):
+def main(port: str, id: int, baud: int, communicator: str):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
-    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+    tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
+
+    communicator_class = gcomm.DXLCommunicator
+    if communicator:
+        mod, clazz = communicator.rsplit(".", maxsplit=1)
+        communicator_class = getattr(importlib.import_module(mod), clazz)
 
     # Create DXL Reacher1D environment
     env = DxlReacher1DEnv(setup='dxl_gripper_default',
-                          dxl_dev_path=port,
-                          idn=id,
-                          baudrate=baud,
+                          communicator=communicator_class,
+                          communicator_kwargs={"idn": id,
+                                               "baudrate": baud,
+                                               "sensor_dt": 0.01,
+                                               "device_path": port,
+                                               "use_ctypes_driver": True},
                           obs_history=1,
                           dt=0.04,
-                          gripper_dt=0.01,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -43,7 +52,6 @@ def main(port, id, baud):
                           target_type='position',
                           reset_type='zero',
                           reward_type='linear',
-                          use_ctypes_driver=True,
                           random_state=rand_state
                           )
 
@@ -179,6 +187,9 @@ if __name__ == '__main__':
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
+    parser.add_argument("--communicator", type=str, default=None,
+                        help="Specify the python class used for dxl communication. "
+                             "By default uses SenseAct/devices/dxl/dxl_communicator")
     args = parser.parse_args()
 
     main(**args.__dict__)
