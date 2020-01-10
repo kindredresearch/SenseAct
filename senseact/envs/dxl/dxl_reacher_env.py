@@ -36,7 +36,6 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                                       "use_ctypes_driver": True},
                  obs_history=1,
                  dt=0.01,
-                 gripper_dt=0.006,
                  rllab_box=False,
                  episode_length_step=None,
                  episode_length_time=4,
@@ -179,7 +178,6 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             self._spec = EnvSpec(self.observation_space, self.action_space)
 
         self._comm_name = 'DxlReacher1D'
-        communicator_kwargs["sensor_dt"] = self.gripper_dt
         communicator_setups = {
             self._comm_name: {
                 'Communicator': communicator,
@@ -191,6 +189,8 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             communicator_setups=communicator_setups,
             action_dim=1,
             observation_dim=self.observation_space.shape[0],
+            # TODO: revert after testing
+            run_mode="singlethread",
             dt=dt,
             **kwargs
         )
