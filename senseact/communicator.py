@@ -85,6 +85,7 @@ class Communicator(Process):
         """Starts sensor and actuator related threads/processes if they exist."""
         # catching SIGTERM from terminate() call so that we can close thread
         # on this spawn-process
+        print("Communicator run")
         signal.signal(signal.SIGTERM, self._close)
 
         if self.use_sensor:

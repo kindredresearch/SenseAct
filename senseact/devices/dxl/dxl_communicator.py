@@ -111,9 +111,8 @@ class DXLCommunicator(Communicator):
         vals = self.dxl_driver.read_a_block(self.port, self.idn, self.read_block, self.read_wait_time)
 
         # Set Return Delay time = 0
-        # TODO: restore after debugging
-        # if not vals["rtd"] == 0:
-        self.write_return_delay_time(dxl_commv1, self.port, self.idn, 0, use_ctypes_driver=self.use_ctypes_driver)
+        if not vals["rtd"] == 0:
+            self.write_return_delay_time(dxl_commv1, self.port, self.idn, 0, use_ctypes_driver=self.use_ctypes_driver)
 
         # Set the dynamixel to wheel mode (infinite rotations and mx-64AT encoder positions Є [0, 4095])
         if not (vals["angle_limit_cw"] == -pi and vals["angle_limit_ccw"] == -pi):

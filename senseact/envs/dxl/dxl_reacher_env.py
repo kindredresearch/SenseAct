@@ -189,8 +189,6 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             communicator_setups=communicator_setups,
             action_dim=1,
             observation_dim=self.observation_space.shape[0],
-            # TODO: revert after testing
-            run_mode="singlethread",
             dt=dt,
             **kwargs
         )
@@ -277,6 +275,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                     action = self.kp * error + self.ki * integral + self.kd * derivative
                     error_prior = error
                 else:
+                    print("Reset good.")
                     break
 
                 self._actuator_comms[self._comm_name].actuator_buffer.write(action)
