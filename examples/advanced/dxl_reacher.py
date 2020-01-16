@@ -7,6 +7,7 @@
 import argparse
 import copy
 import time
+import pickle
 from multiprocessing import Process, Value, Manager
 
 import baselines.common.tf_util as U
@@ -24,6 +25,8 @@ from senseact.devices.dxl import dxl_communicator as gcomm
 
 
 def main(port: str, id: int, baud: int, communicator: str):
+    tag = str(time.time())
+
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -77,7 +80,7 @@ def main(port: str, id: int, baud: int, communicator: str):
                                      "episodic_returns": [],
                                      "episodic_lengths": [], })
     # Plotting process
-    pp = Process(target=plot_dxl_reacher, args=(env, 2048, shared_returns, plot_running))
+    pp = Process(target=plot_dxl_reacher, args=(tag, env, 2048, shared_returns, plot_running))
     pp.start()
 
     # Create callback function for logging data from baselines TRPO learn
@@ -102,11 +105,19 @@ def main(port: str, id: int, baud: int, communicator: str):
     time.sleep(2)
     pp.join()
 
+    with open("{}.pkl".format(time.time()), "wb") as ofile:
+        pickle.dump({"episodic_returns": shared_returns["episodic_returns"],
+                     "episodic_lengths": shared_returns["episodic_lengths"]}, ofile)
+
     # Shutdown the environment
     env.close()
 
 
-def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
+def save_data():
+    pass
+
+
+def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
 
     Args:
@@ -180,6 +191,10 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
+
+    # Save just the portion _inside_ the second axis's boundaries
+    extent = ax2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig('{}.png'.format(tag), bbox_inches=extent.expanded(1.1, 1.1))
 
 
 if __name__ == '__main__':
