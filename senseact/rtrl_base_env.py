@@ -129,6 +129,7 @@ class RTRLBaseEnv(object):
         self._num_sensor_packets = {}
 
         # Construct the communicators without starting
+        # TODO: I think it would be better to use a CommunicatorSetup class than relying on a dict
         for name, setup in communicator_setups.items():
             # Initialize communicator with the given parameters
             comm = setup['Communicator'](**setup['kwargs'])

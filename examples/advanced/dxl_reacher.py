@@ -6,8 +6,8 @@
 # LICENSE file in the root directory of this source tree.
 import argparse
 import copy
-import time
 import pickle
+import time
 from multiprocessing import Process, Value, Manager
 
 import baselines.common.tf_util as U
@@ -16,15 +16,12 @@ from baselines.ppo1.mlp_policy import MlpPolicy
 from baselines.trpo_mpi.trpo_mpi import learn
 from helper import create_callback
 
+from senseact.devices.dxl import dxl_communicator as gcomm
 from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
-import glob
-import importlib
-from senseact.devices.dxl import dxl_communicator as gcomm
 
-
-def main(port: str, id: int, baud: int, communicator: str):
+def main(port: str, id: int, baud: int):
     tag = str(time.time())
 
     # use fixed random state
@@ -32,20 +29,34 @@ def main(port: str, id: int, baud: int, communicator: str):
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
 
-    communicator_class = gcomm.DXLCommunicator
-    if communicator:
-        mod, clazz = communicator.rsplit(".", maxsplit=1)
-        communicator_class = getattr(importlib.import_module(mod), clazz)
+    # if you want to use a different communicator class do it here.
+    # a name will be assigned by the environment
+    communicator_setup = {
+
+    }
+
+    obs_history = 1
+    comm_name = "DXL"
+    communicator_setups = {
+        comm_name: {
+            'Communicator': gcomm.DXLCommunicator,
+            'num_sensor_packets': obs_history,
+            'kwargs': {
+                "idn": id,
+                "baudrate": baud,
+                "sensor_dt": 0.01,
+                "device_path": port,
+                "use_ctypes_driver": True
+            }
+        }
+    }
 
     # Create DXL Reacher1D environment
     env = DxlReacher1DEnv(setup='dxl_gripper_default',
-                          communicator=communicator_class,
-                          communicator_kwargs={"idn": id,
-                                               "baudrate": baud,
-                                               "sensor_dt": 0.01,
-                                               "device_path": port,
-                                               "use_ctypes_driver": True},
-                          obs_history=1,
+                          communicator_setups=communicator_setups,
+                          actuator_name=comm_name,
+                          sensor_name=comm_name,
+                          obs_history=obs_history,
                           dt=0.04,
                           rllab_box=False,
                           episode_length_step=None,
@@ -202,9 +213,6 @@ if __name__ == '__main__':
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
-    parser.add_argument("--communicator", type=str, default=None,
-                        help="Specify the python class used for dxl communication. "
-                             "By default uses SenseAct/devices/dxl/dxl_communicator")
     args = parser.parse_args()
 
     main(**args.__dict__)
