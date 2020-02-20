@@ -9,7 +9,7 @@ import os
 import signal
 
 from threading import Thread
-from multiprocessing import Process
+from multiprocessing import Process, Event
 
 from senseact.sharedbuffer import SharedBuffer
 
@@ -75,17 +75,20 @@ class Communicator(Process):
         self._actuator_thread = None
         self._sensor_running = False
         self._actuator_running = False
+        self._ready = Event()
         if self.use_sensor:
             self.sensor_buffer = SharedBuffer(**sensor_args)
 
         if self.use_actuator:
             self.actuator_buffer = SharedBuffer(**actuator_args)
 
+    def is_ready(self):
+        return self._ready.is_set()
+
     def run(self):
         """Starts sensor and actuator related threads/processes if they exist."""
         # catching SIGTERM from terminate() call so that we can close thread
         # on this spawn-process
-        print("Communicator run")
         signal.signal(signal.SIGTERM, self._close)
 
         if self.use_sensor:
@@ -93,6 +96,8 @@ class Communicator(Process):
 
         if self.use_actuator:
             self._actuator_start()
+
+        self._ready.set()
 
         while self._sensor_running or self._actuator_running:
             # if parent pid is no longer the same (1 on Linux if re-parented to init), then

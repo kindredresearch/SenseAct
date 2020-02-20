@@ -6,7 +6,6 @@
 # LICENSE file in the root directory of this source tree.
 import argparse
 import copy
-import pickle
 import time
 from multiprocessing import Process, Value, Manager
 
@@ -116,10 +115,6 @@ def main(port: str, id: int, baud: int):
     time.sleep(2)
     pp.join()
 
-    with open("{}.pkl".format(time.time()), "wb") as ofile:
-        pickle.dump({"episodic_returns": shared_returns["episodic_returns"],
-                     "episodic_lengths": shared_returns["episodic_lengths"]}, ofile)
-
     # Shutdown the environment
     env.close()
 
@@ -197,7 +192,7 @@ def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
                 hl11.set_xdata(np.arange(1, len(rets) + 1) * x_tick)
                 ax2.set_xlim([x_tick, len(rets) * x_tick])
                 hl11.set_ydata(rets)
-                buffer = abs(np.max(rets) - np.min(rets))*0.05
+                buffer = abs(np.max(rets) - np.min(rets)) * 0.05
                 ax2.set_ylim([np.min(rets) - buffer, np.max(rets) + buffer])
         time.sleep(0.01)
         fig.canvas.draw()
