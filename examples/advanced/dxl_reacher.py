@@ -197,7 +197,8 @@ def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
                 hl11.set_xdata(np.arange(1, len(rets) + 1) * x_tick)
                 ax2.set_xlim([x_tick, len(rets) * x_tick])
                 hl11.set_ydata(rets)
-                ax2.set_ylim([np.min(rets), np.max(rets) + 50])
+                buffer = abs(np.max(rets) - np.min(rets))*0.05
+                ax2.set_ylim([np.min(rets) - buffer, np.max(rets) + buffer])
         time.sleep(0.01)
         fig.canvas.draw()
         fig.canvas.flush_events()
