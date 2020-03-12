@@ -3,19 +3,17 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import gym
 import time
+from collections import deque
+from math import pi
+from multiprocessing import Array, Value
+
+import gym
 import numpy as np
 
 from senseact import utils
-from senseact.rtrl_base_env import RTRLBaseEnv
-from senseact.devices.dxl import dxl_mx64
 from senseact.devices.dxl.dxl_setup import setups
-from senseact.devices.dxl import dxl_communicator as gcomm
-
-from math import pi
-from collections import deque
-from multiprocessing import Array, Value
+from senseact.rtrl_base_env import RTRLBaseEnv
 
 
 class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
@@ -33,7 +31,8 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                  actuator_name=None,
                  sensor_name=None,
                  obs_history=1,
-                 dt=0.01,
+                 dt=0.04,
+                 sensor_dt=0.01,
                  rllab_box=False,
                  episode_length_step=None,
                  episode_length_time=4,
@@ -66,7 +65,9 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                 into a single observation vector
             dt: A float specifying duration of an environment time step
                 in seconds.
-            gripper_dt: A float representing DXLCommunicator cycle time
+            sensor_dt: A float representing DXLCommunicator cycle time.
+                This does not control the cycle time, but is used in PID control for resetting the motor at the
+                start of an episode.
             rllab_box: A bool specifying whether to wrap environment
                 action and observation spaces into an RllabBox object
                 (required for off-the-shelf rllab algorithms implementations).
@@ -100,7 +101,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         self.cool_down_temperature = 50
         self.obs_history = obs_history
         self.dt = dt
-        self.gripper_dt = dt
+        self.sensor_dt = sensor_dt
 
         self.max_torque_mag = np.array([max_torque_mag])
         self.max_velocity = np.array([max_velocity])
@@ -260,6 +261,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         present_pos = 0.0
 
         # Once in the correct regime, the `present_pos` values can be trusted
+        # TODO: remove this and replace it with a call on the given communicator to move to a position.
         start_time = time.time()
         while time.time() - start_time < 5:
             if self._sensor_comms[self._sensor_name].sensor_buffer.updated():
@@ -274,8 +276,8 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
 
                 error = self._reset_pos_.value - present_pos
                 if abs(error) > 0.017:  # ~1 deg
-                    integral = integral + (error * self.gripper_dt)
-                    derivative = (error - error_prior) / self.gripper_dt
+                    integral = integral + (error * self.sensor_dt)
+                    derivative = (error - error_prior) / self.sensor_dt
                     action = self.kp * error + self.ki * integral + self.kd * derivative
                     error_prior = error
                 else:

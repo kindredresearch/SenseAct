@@ -20,14 +20,16 @@ from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
 
-def main(port, id, baud):
+def main(port, id, baud, use_pyserial):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
 
+    cycle_time = 0.04
     obs_history = 1
     comm_name = "DXL"
+    sensor_dt = 0.01
     communicator_setups = {
         comm_name: {
             'Communicator': gcomm.DXLCommunicator,
@@ -37,7 +39,7 @@ def main(port, id, baud):
                 "baudrate": baud,
                 "sensor_dt": 0.01,
                 "device_path": port,
-                "use_ctypes_driver": True
+                "use_ctypes_driver": not use_pyserial
             }
         }
     }
@@ -48,7 +50,8 @@ def main(port, id, baud):
                           actuator_name=comm_name,
                           sensor_name=comm_name,
                           obs_history=obs_history,
-                          dt=0.04,
+                          dt=cycle_time,
+                          sensor_dt=sensor_dt,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -192,6 +195,7 @@ if __name__ == '__main__':
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
+    parser.add_argument("--use_pyserial", action="store_true", default=False)
     args = parser.parse_args()
 
     main(**args.__dict__)
