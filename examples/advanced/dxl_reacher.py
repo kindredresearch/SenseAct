@@ -28,12 +28,6 @@ def main(port: str, id: int, baud: int):
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
 
-    # if you want to use a different communicator class do it here.
-    # a name will be assigned by the environment
-    communicator_setup = {
-
-    }
-
     obs_history = 1
     comm_name = "DXL"
     communicator_setups = {
@@ -117,11 +111,6 @@ def main(port: str, id: int, baud: int):
 
     # Shutdown the environment
     env.close()
-
-
-def save_data():
-    pass
-
 
 def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
