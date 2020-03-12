@@ -15,26 +15,40 @@ from baselines.ppo1.mlp_policy import MlpPolicy
 from baselines.trpo_mpi.trpo_mpi import learn
 from helper import create_callback
 
+from senseact.devices.dxl import dxl_communicator as gcomm
 from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
-import glob
 
-
-def main(port, id, baud):
+def main(port: str, id: int, baud: int):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
-    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+    tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
+
+    obs_history = 1
+    comm_name = "DXL"
+    communicator_setups = {
+        comm_name: {
+            'Communicator': gcomm.DXLCommunicator,
+            'num_sensor_packets': obs_history,
+            'kwargs': {
+                "idn": id,
+                "baudrate": baud,
+                "sensor_dt": 0.01,
+                "device_path": port,
+                "use_ctypes_driver": True
+            }
+        }
+    }
 
     # Create DXL Reacher1D environment
     env = DxlReacher1DEnv(setup='dxl_gripper_default',
-                          dxl_dev_path=port,
-                          idn=id,
-                          baudrate=baud,
-                          obs_history=1,
+                          communicator_setups=communicator_setups,
+                          actuator_name=comm_name,
+                          sensor_name=comm_name,
+                          obs_history=obs_history,
                           dt=0.04,
-                          gripper_dt=0.01,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -43,7 +57,6 @@ def main(port, id, baud):
                           target_type='position',
                           reset_type='zero',
                           reward_type='linear',
-                          use_ctypes_driver=True,
                           random_state=rand_state
                           )
 
@@ -96,7 +109,6 @@ def main(port, id, baud):
 
     # Shutdown the environment
     env.close()
-
 
 def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
