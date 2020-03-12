@@ -20,7 +20,7 @@ from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
 
-def main(port: str, id: int, baud: int):
+def main(port, id, baud):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -109,6 +109,7 @@ def main(port: str, id: int, baud: int):
 
     # Shutdown the environment
     env.close()
+
 
 def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
