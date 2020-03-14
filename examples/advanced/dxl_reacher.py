@@ -20,7 +20,7 @@ from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
 
-def main(port: str, id: int, baud: int):
+def main(port: str, id: int, baud: int, use_pyserial: bool):
     tag = str(time.time())
 
     # use fixed random state
@@ -39,7 +39,7 @@ def main(port: str, id: int, baud: int):
                 "baudrate": baud,
                 "sensor_dt": 0.01,
                 "device_path": port,
-                "use_ctypes_driver": True
+                "use_ctypes_driver": use_pyserial
             }
         }
     }
@@ -198,6 +198,7 @@ if __name__ == '__main__':
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
+    parser.add_argument("--use_pyserial", action="store_true", default=False)
     args = parser.parse_args()
 
     main(**args.__dict__)
