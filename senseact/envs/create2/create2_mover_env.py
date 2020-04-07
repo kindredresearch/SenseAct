@@ -30,7 +30,7 @@ class Create2MoverEnv(RTRLBaseEnv, gym.Env):
     """
 
     def __init__(self, episode_length_time, port='/dev/ttyUSB0', obs_history=1, dt=0.015,
-                 auto_unwind=True, rllab_box=False, **kwargs):
+                 auto_unwind=True, rllab_box=False, start_timeout=None, **kwargs):
         """Constructor of the environment.
 
         Args:
@@ -40,6 +40,10 @@ class Create2MoverEnv(RTRLBaseEnv, gym.Env):
             dt:                  the cycle time in seconds
             auto_unwind:         boolean of whether we want to execute the auto cable-unwind code
             rllab_box:           whether we are using rllab algorithm or not
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                            If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                            -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                            take precedence over the start_timeout values set on the communicators.
             **kwargs:            the remaining arguments passed to the base class
         """
         self._obs_history = obs_history
@@ -120,14 +124,15 @@ class Create2MoverEnv(RTRLBaseEnv, gym.Env):
                                                             'opcodes': [main_opcode] + extra_opcodes,
                                                             'port': port,
                                                             'buffer_len': 2 * buffer_len,
-                                                           }
-                                                }
-                              }
+                                                            }
+                                                 }
+                               }
 
         super(Create2MoverEnv, self).__init__(communicator_setups=communicator_setups,
                                               action_dim=len(self._action_space.low),
                                               observation_dim=len(self._observation_space.low),
                                               dt=dt,
+                                              start_timeout=start_timeout,
                                               **kwargs)
 
     def _compute_sensation_(self, name, sensor_window, timestamp_window, index_window):
@@ -294,7 +299,7 @@ class Create2MoverEnv(RTRLBaseEnv, gym.Env):
             distance_reward += distance
 
         reward = 0
-        reward += distance_reward   # tiny reward for forward progress
+        reward += distance_reward  # tiny reward for forward progress
 
         # multiply by a constant
         reward *= 0.15

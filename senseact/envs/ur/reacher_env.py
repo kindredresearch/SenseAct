@@ -29,6 +29,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
     function, which moves the arm into a predefined initial position at the end
     of each episode and generates a random target.
     """
+
     def __init__(self,
                  setup,
                  host=None,
@@ -45,16 +46,17 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                  actuation_sync_period=1,
                  episode_length_time=None,
                  episode_length_step=None,
-                 rllab_box = False,
+                 rllab_box=False,
                  servoj_t=ur_utils.COMMANDS['SERVOJ']['default']['t'],
                  servoj_gain=ur_utils.COMMANDS['SERVOJ']['default']['gain'],
                  speedj_a=ur_utils.COMMANDS['SPEEDJ']['default']['a'],
                  speedj_t_min=ur_utils.COMMANDS['SPEEDJ']['default']['t_min'],
-                 movej_t=2, # used for resetting
+                 movej_t=2,  # used for resetting
                  accel_max=None,
                  speed_max=None,
                  dt=0.008,
                  delay=0.0,  # to simulate extra delay in the system
+                 start_timeout=None,
                  **kwargs):
         """Inits ReacherEnv class with task and robot specific parameters.
 
@@ -113,9 +115,11 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             dt: a float specifying duration of an environment time step
                 in seconds.
             delay: a float specifying artificial observation delay in seconds
-
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                            If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                            -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                            take precedence over the start_timeout values set on the communicators.
         """
-
 
         # Check that the task parameters chosen are implemented in this class
         assert dof in [2, 6]
@@ -134,7 +138,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._episode_length_time = episode_length_time
             self._episode_length_step = int(episode_length_time / dt)
         else:
-            #TODO: should we allow a continuous behaviour case here, with no episodes?
+            # TODO: should we allow a continuous behaviour case here, with no episodes?
             print("episode_length_time or episode_length_step needs to be set")
             raise AssertionError
 
@@ -147,13 +151,13 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._target_type = target_type
         self._reset_type = reset_type
         self._reward_type = reward_type
-        self._vel_penalty = vel_penalty # weight of the velocity penalty
+        self._vel_penalty = vel_penalty  # weight of the velocity penalty
         self._deriv_action_max = deriv_action_max
         self._first_deriv_max = first_deriv_max
         self._delay = delay
-        if accel_max==None:
+        if accel_max == None:
             accel_max = setups[setup]['accel_max']
-        if speed_max==None:
+        if speed_max == None:
             speed_max = setups[setup]['speed_max']
         if self._dof == 6:
             self._joint_indices = [0, 1, 2, 3, 4, 5]
@@ -209,10 +213,10 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         # Set up action and observation space
 
-        if self._derivative_type== 'second' or self._derivative_type== 'first':
+        if self._derivative_type == 'second' or self._derivative_type == 'first':
             self._action_low = -np.ones(self._dof) * self._deriv_action_max
             self._action_high = np.ones(self._dof) * self._deriv_action_max
-        else: # derivative_type=='none'
+        else:  # derivative_type=='none'
             if self._control_type == 'position':
                 self._action_low = self._angles_low
                 self._action_high = self._angles_high
@@ -242,10 +246,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 list(self._angles_high * self._obs_history)  # q_actual
                 + list(np.ones(self._dof * self._obs_history))  # qd_actual
                 + list(self._target_high)  # target
-                + list(self._action_high)    # previous action in cont space
+                + list(self._action_high)  # previous action in cont space
             )
         )
-
 
         self._action_space = Box(low=self._action_low, high=self._action_high)
 
@@ -258,15 +261,15 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         # Communicator Parameters
         communicator_setups = {'UR5':
-                                   {
-                                    'num_sensor_packets': obs_history,
+            {
+                'num_sensor_packets': obs_history,
 
-                                    'kwargs': {'host': self._host,
-                                               'actuation_sync_period': actuation_sync_period,
-                                               'buffer_len': obs_history + SharedBuffer.DEFAULT_BUFFER_LEN,
-                                               }
-                                    }
-                               }
+                'kwargs': {'host': self._host,
+                           'actuation_sync_period': actuation_sync_period,
+                           'buffer_len': obs_history + SharedBuffer.DEFAULT_BUFFER_LEN,
+                           }
+            }
+        }
         if self._delay > 0:
             from senseact.devices.ur.ur_communicator_delay import URCommunicator
             communicator_setups['UR5']['kwargs']['delay'] = self._delay
@@ -278,6 +281,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                                          action_dim=len(self.action_space.low),
                                          observation_dim=len(self.observation_space.low),
                                          dt=dt,
+                                         start_timeout=start_timeout,
                                          **kwargs)
 
         # The last action
@@ -306,7 +310,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         self._pstop_unlock_packet = np.zeros(self._actuator_comms['UR5'].actuator_buffer.array_len)
         self._pstop_unlock_packet[0] = ur_utils.COMMANDS['UNLOCK_PSTOP']['id']
-
 
         # self.info['reward_dist'] = 0
         # self.info['reward_vel'] = 0
@@ -358,7 +361,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._actuator_comms['UR5'].actuator_buffer.write(self._reset_packet)
         time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
 
-
     def _compute_sensation_(self, name, sensor_window, timestamp_window, index_window):
         """Creates and saves an observation vector based on sensory data.
 
@@ -386,21 +388,21 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         """
         index_end = len(sensor_window)
         index_start = index_end - self._obs_history
-        self._q_ = np.array([sensor_window[i]['q_actual'][0] for i in range(index_start,index_end)])
-        self._qt_ = np.array([sensor_window[i]['q_target'][0] for i in range(index_start,index_end)])
-        self._qd_ = np.array([sensor_window[i]['qd_actual'][0] for i in range(index_start,index_end)])
-        self._qdt_ = np.array([sensor_window[i]['qd_target'][0] for i in range(index_start,index_end)])
-        self._qddt_ = np.array([sensor_window[i]['qdd_target'][0] for i in range(index_start,index_end)])
+        self._q_ = np.array([sensor_window[i]['q_actual'][0] for i in range(index_start, index_end)])
+        self._qt_ = np.array([sensor_window[i]['q_target'][0] for i in range(index_start, index_end)])
+        self._qd_ = np.array([sensor_window[i]['qd_actual'][0] for i in range(index_start, index_end)])
+        self._qdt_ = np.array([sensor_window[i]['qd_target'][0] for i in range(index_start, index_end)])
+        self._qddt_ = np.array([sensor_window[i]['qdd_target'][0] for i in range(index_start, index_end)])
 
-        self._current_ = np.array([sensor_window[i]['i_actual'][0] for i in range(index_start,index_end)])
-        self._currentt_ = np.array([sensor_window[i]['i_target'][0] for i in range(index_start,index_end)])
-        self._currentc_ = np.array([sensor_window[i]['i_control'][0] for i in range(index_start,index_end)])
-        self._mt_ = np.array([sensor_window[i]['m_target'][0] for i in range(index_start,index_end)])
-        self._voltage_ = np.array([sensor_window[i]['v_actual'][0] for i in range(index_start,index_end)])
+        self._current_ = np.array([sensor_window[i]['i_actual'][0] for i in range(index_start, index_end)])
+        self._currentt_ = np.array([sensor_window[i]['i_target'][0] for i in range(index_start, index_end)])
+        self._currentc_ = np.array([sensor_window[i]['i_control'][0] for i in range(index_start, index_end)])
+        self._mt_ = np.array([sensor_window[i]['m_target'][0] for i in range(index_start, index_end)])
+        self._voltage_ = np.array([sensor_window[i]['v_actual'][0] for i in range(index_start, index_end)])
 
-        self._safety_mode_ = np.array([sensor_window[i]['safety_mode'][0] for i in range(index_start,index_end)])
+        self._safety_mode_ = np.array([sensor_window[i]['safety_mode'][0] for i in range(index_start, index_end)])
 
-        #TODO: should there be checks for safety modes greater than pstop here, and exit if found?
+        # TODO: should there be checks for safety modes greater than pstop here, and exit if found?
 
         # Compute end effector position
         x = ur_utils.forward(sensor_window[-1]['q_actual'][0], self._ik_params)[:3, 3]
@@ -440,8 +442,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             index: an integer containing action index
         """
         if self._safety_mode_ == ur_utils.SafetyModes.NORMAL or \
-            self._safety_mode_ == ur_utils.SafetyModes.NONE:
-                self.pstop_time = None
+                self._safety_mode_ == ur_utils.SafetyModes.NONE:
+            self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.REDUCED:
             self.pstop_time = None
         elif self._safety_mode_ == ur_utils.SafetyModes.PROTECTIVE_STOP:
@@ -454,7 +456,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                     if self._pstop_time_ - self._pstop_times_[-self._max_pstop] < self._max_pstop_window:
                         print("Too many p-stops encountered, closing environment")
                         print('Greater than {0} p-stops encountered within {1} seconds'.format(
-                                    self._max_pstop, self._max_pstop_window))
+                            self._max_pstop, self._max_pstop_window))
                         self.close()
                         sys.exit(1)
             elif time.time() > self._pstop_time_ + self._clear_pstop_after:  # XXX
@@ -468,17 +470,17 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self.close()
         self._action_ = action
         action = np.clip(action, self._action_low, self._action_high)
-        self.return_point = None   # a point within the box to which to return when out of box bounds
+        self.return_point = None  # a point within the box to which to return when out of box bounds
         self.escaped_the_box = False  # whether got outside of the box
-        if self._derivative_type== 'none':
+        if self._derivative_type == 'none':
             self._cmd_ = action
         else:
             # decide direct_prev for each control type
-            if self._control_type== 'position':
+            if self._control_type == 'position':
                 direct_prev = self._q_[-1, self._joint_indices]
-            elif self._control_type== 'velocity':
+            elif self._control_type == 'velocity':
                 direct_prev = self._cmd_prev_
-            elif self._control_type== 'acceleration':
+            elif self._control_type == 'acceleration':
                 direct_prev = self._cmd_prev_  # qddt should not be used
             # decide increment for each derivative type
             if self._derivative_type == 'first':
@@ -647,7 +649,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             if not self.angle_return_point:
                 print("outside of angle bound on joints %r" % (list(affected_joints[0])))
                 self.angle_return_point = True
-            self._cmd_[affected_joints] = np.sign(clipped_pos - cur_pos)[affected_joints]*np.max(np.abs(self._cmd_))
+            self._cmd_[affected_joints] = np.sign(clipped_pos - cur_pos)[affected_joints] * np.max(np.abs(self._cmd_))
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             self._actuation_packet_['UR5'] = self._speedj_packet
 
@@ -701,8 +703,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             if self._reward_type == "linear":
                 reward_dist = -dist
             elif self._reward_type == "precision":
-                reward_dist = -dist +\
-                              np.exp( -dist**2 / 0.01)
+                reward_dist = -dist + \
+                              np.exp(-dist ** 2 / 0.01)
             elif self._reward_type == "sparse":
                 if dist < 0.05:
                     reward_dist = 0
@@ -714,7 +716,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             if self._reward_type == "linear":
                 reward_dist = -dist
             elif self._reward_type == "precision":
-                reward_dist = -dist +\
+                reward_dist = -dist + \
                               np.exp(-dist ** 2 / 0.01)
             elif self._reward_type == "sparse":
                 raise NotImplementedError
@@ -722,8 +724,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # TODO: doublecheck whether '0' or '-1' should be used as the index
         reward_vel = -self._vel_penalty * np.square(self._qd_[-1, self._joint_indices]).sum()
 
-        #self.info['reward_dist'] = reward_dist
-        #self.info['reward_vel'] = reward_vel
+        # self.info['reward_dist'] = reward_dist
+        # self.info['reward_vel'] = reward_vel
 
         return (reward_dist + reward_vel) * self._dt / 0.008
 

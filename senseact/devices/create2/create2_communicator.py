@@ -14,8 +14,9 @@ from senseact.sharedbuffer import SharedBuffer
 
 class Create2Communicator(Communicator):
     """The class implements communicator for Create2 device."""
+
     def __init__(self, sensor_packet_ids, opcodes, port='/dev/ttyUSB0', baudrate=115200,
-                 buffer_len=SharedBuffer.DEFAULT_BUFFER_LEN):
+                 buffer_len=SharedBuffer.DEFAULT_BUFFER_LEN, start_timeout=10.0):
         """Inits the communicator object with device-specific parameters.
 
         Args:
@@ -48,13 +49,14 @@ class Create2Communicator(Communicator):
             max_params = max(max_params, len(self._create2.get_op_params(opcode)))
 
         actuator_args = {'buffer_len': buffer_len,
-                         'array_len': 1 + max_params,     # add one for opcode itself
+                         'array_len': 1 + max_params,  # add one for opcode itself
                          'array_type': 'i',
                          'np_array_type': 'i',
                          }
 
         super(Create2Communicator, self).__init__(use_sensor=True, use_actuator=True,
-                                                  sensor_args=sensor_args, actuator_args=actuator_args)
+                                                  sensor_args=sensor_args, actuator_args=actuator_args,
+                                                  start_timeout=start_timeout)
 
     def run(self):
         """Method called by Python when the communicator process is started."""
