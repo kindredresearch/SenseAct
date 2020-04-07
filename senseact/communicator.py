@@ -108,7 +108,7 @@ class Communicator(Process):
                 return
 
             if (self._sensor_thread is not None and not self._sensor_thread.is_alive()) or \
-               (self._actuator_thread is not None and not self._actuator_thread.is_alive()):
+                    (self._actuator_thread is not None and not self._actuator_thread.is_alive()):
                 logging.error("Sensor/Actuator thread has exited, closing communicator.")
                 self._close()
                 return
@@ -131,12 +131,18 @@ class Communicator(Process):
         self._sensor_running = True
         while self._sensor_running:
             self._sensor_handler()
+            # this sleep is really, really important. Solid loops are very bad.
+            # Note that most systems can only achieve sleeps for millisecond resolution
+            time.sleep(0.0001)
 
     def _actuator_run(self):
         """Loop for handling actuators."""
         self._actuator_running = True
         while self._actuator_running:
             self._actuator_handler()
+            # this sleep is really, really important. Solid loops are very bad.
+            # Note that most systems can only achieve sleeps for millisecond resolution
+            time.sleep(0.0001)
 
     def _sensor_handler(self):
         """Handles sensor packet communication and necessary processing.
@@ -164,4 +170,3 @@ class Communicator(Process):
             self._sensor_thread.join()
         if self._actuator_thread is not None:
             self._actuator_thread.join()
-
