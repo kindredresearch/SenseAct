@@ -37,6 +37,7 @@ class RTRLBaseEnv(object):
                  sleep_time=0.0001,
                  busy_loop=True,
                  random_state=None,
+                 start_timeout=None,
                  **kwargs
                  ):
 
@@ -63,6 +64,10 @@ class RTRLBaseEnv(object):
                 numpy.random.RandomState().get_state(). This is to ensure
                 reproducibility by reusing the same random state externally from
                 an experiment script.
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                take precedence over the start_timeout values set on the communicators.
             sleep_time: a float representing lower bound on sleep() function
                 time resolution provided by OS. For linux based OSes the
                 resolution is typically ~0.001s, for Windows based OSes its ~0.01s.
@@ -77,6 +82,7 @@ class RTRLBaseEnv(object):
         self._dt_tol = dt_tol
         self._sleep_time = sleep_time
         self._busy_loop = busy_loop
+        self.start_timeout = start_timeout
 
         # create random object based on passed random_state tuple
         self._rand_obj_ = np.random.RandomState()
@@ -159,18 +165,28 @@ class RTRLBaseEnv(object):
         self._running = True
 
         waiting_for = []
+
+        timeout = 0
         # Start the communicator process
         for key, comm in self._all_comms.items():
+            timeout = max(timeout, comm.start_timeout)
             comm.start()
             waiting_for.append((key, comm))
 
-        timeout = 5
+        """
+        If self.start_timeout is -1 then we'll wait indefinitely.
+        If self.start_timeout is None then we use the longest start_timeout specified by all comms.
+        If self.start_timeout is >= 0 then that is the value we will use.
+        """
+        timeout = timeout if self.start_timeout is None else self.start_timeout
+
         start_time = time.time()
         while len(waiting_for) > 0:
             time.sleep(0.5)  # let the communicator buffer have some packets
             # We're going to wait until the communicators are all online.
             waiting_for = [kc for kc in itertools.filterfalse(lambda key_comm: key_comm[1].is_ready(), waiting_for)]
-            if time.time() - start_time > timeout:
+
+            if (timeout >= 0) and (time.time() - start_time > timeout):
                 raise TimeoutError(f"Timed out waiting for communicators: {[key for key, comm in waiting_for]}")
 
         self._new_obs_time = time.time()

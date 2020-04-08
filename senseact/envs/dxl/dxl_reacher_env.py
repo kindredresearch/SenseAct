@@ -45,6 +45,8 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                  reward_type='linear',
                  delay=0,
                  max_velocity=5,
+                 use_ctypes_driver=True,
+                 start_timeout=None,
                  **kwargs
                  ):
         """ Inits DxlReacher1DEnv class with task and servo specific parameters.
@@ -93,6 +95,10 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             use_ctypes_driver: A bool. Setting it to True chooses CType-based driver.
                 We found the CType-based driver to provide substantially more timely
                 and precise communication compared to the pyserial-based one.
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                            If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                            -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                            take precedence over the start_timeout values set on the communicators.
             **kwargs: Keyword arguments
         """
 
@@ -194,6 +200,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             action_dim=1,
             observation_dim=self.observation_space.shape[0],
             dt=dt,
+            start_timeout=start_timeout,
             **kwargs
         )
 

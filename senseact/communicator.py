@@ -47,7 +47,7 @@ class Communicator(Process):
             from the buffer by _actuator_handler
     """
 
-    def __init__(self, sensor_args, actuator_args, use_sensor=True, use_actuator=True):
+    def __init__(self, sensor_args, actuator_args, use_sensor=True, use_actuator=True, start_timeout=1.0):
         """Inits communicator class with device-specific sensor and actuation arguments.
 
         Args:
@@ -66,6 +66,8 @@ class Communicator(Process):
                 sensory data
             use_actuator: a boolean, indicating whether communicator will transfer
                 actuation data (e.g. video cameras may not have actuations)
+            start_up_time: How long to wait for start up. If the communicator does not start up in this time then
+                an exception will be thrown by the environment.
         """
         super(Communicator, self).__init__()
         self.use_sensor = use_sensor
@@ -75,6 +77,7 @@ class Communicator(Process):
         self._actuator_thread = None
         self._sensor_running = False
         self._actuator_running = False
+        self.start_timeout = start_timeout
         self._ready = Event()
         if self.use_sensor:
             self.sensor_buffer = SharedBuffer(**sensor_args)
