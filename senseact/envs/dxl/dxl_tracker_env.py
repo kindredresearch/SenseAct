@@ -205,8 +205,7 @@ class DxlTracker1DEnv(RTRLBaseEnv, gym.core.Env):
             **kwargs
         )
 
-        read_block = dxl_mx64.MX64.subblock('version_0', 'goal_acceleration', ret_dxl_type=use_ctypes_driver)
-        self.regnames = [reg.name for reg in read_block]
+        self.regnames = self._sensor_comms[self._sensor_name].get_register_names()
         self.reg_index = dict(zip(self.regnames, range(len(self.regnames))))
 
         self.episode_steps = Value('i', 0)
