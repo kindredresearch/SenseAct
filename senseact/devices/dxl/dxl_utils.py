@@ -79,6 +79,16 @@ def make_connection(driver, baudrate=1000000, timeout=5, port_str=None):
     return driver.make_connection(baudrate=baudrate, timeout=timeout, port_str=port_str)
 
 
+def clear(driver, port):
+    """
+    Clears the port
+
+    :param driver: Driver used. Returned by get_driver()
+    :param port: Port return by make_connection
+    """
+    driver.clear_port(port)
+
+
 def close(driver, port):
     """
     Closes the port
