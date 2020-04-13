@@ -77,6 +77,8 @@ class DXLCommunicator(Communicator):
                                               actuator_args=actuator_args,
                                               start_timeout=start_timeout)
 
+        self.just_read = 0
+        self.just_read_lock = Lock()
         self.port_lock = Lock()
         self.read_start_time = self.read_end_time = time.time()
         self.read_time = 0
@@ -137,6 +139,9 @@ class DXLCommunicator(Communicator):
         self.port_lock.acquire()
         vals = self.dxl_driver.read_a_block_vals(self.port, self.idn, self.read_block, self.read_wait_time)
         self.port_lock.release()
+        self.just_read_lock.acquire()
+        self.just_read = 1
+        self.just_read_lock.release()
         self.sensor_buffer.write(vals)
 
     def _actuator_handler(self):
@@ -145,13 +150,21 @@ class DXLCommunicator(Communicator):
         Only torque control allowed now. We send zero torque
         (i.e., stopping movements) if there is a delay in actuation.
         """
+        if time.time() - self.last_actuation_updated > self.max_actuation_time:
+            self.torque = 0
+        self.just_read_lock.acquire()
+        if self.just_read == 1:
+            self.just_read = 0
+            self.just_read_lock.release()
+        else:
+            self.just_read_lock.release()
+            time.sleep(0.0001)
+            return
         if self.actuator_buffer.updated():
             self.last_actuation_updated = time.time()
             recent_actuation, _, _ = self.actuator_buffer.read_update()
             self.torque = recent_actuation[0]
-            self.write_torque(self.torque)
-        elif time.time() - self.last_actuation_updated > self.max_actuation_time:
-            self.write_torque(0)
+        self.write_torque(self.torque)
 
     def write_torque(self, torque):
         """ Writes goal torque commands to the DXL control table.
