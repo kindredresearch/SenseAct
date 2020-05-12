@@ -28,8 +28,10 @@ def main(port: str, id: int, baud: int, use_pyserial: bool):
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
 
+    cycle_time = 0.04
     obs_history = 1
     comm_name = "DXL"
+    sensor_dt = 0.01
     communicator_setups = {
         comm_name: {
             'Communicator': gcomm.DXLCommunicator,
@@ -37,9 +39,9 @@ def main(port: str, id: int, baud: int, use_pyserial: bool):
             'kwargs': {
                 "idn": id,
                 "baudrate": baud,
-                "sensor_dt": 0.01,
+                "sensor_dt": sensor_dt,
                 "device_path": port,
-                "use_ctypes_driver": use_pyserial
+                "use_ctypes_driver": not use_pyserial
             }
         }
     }
@@ -50,7 +52,8 @@ def main(port: str, id: int, baud: int, use_pyserial: bool):
                           actuator_name=comm_name,
                           sensor_name=comm_name,
                           obs_history=obs_history,
-                          dt=0.04,
+                          dt=cycle_time,
+                          sensor_dt=sensor_dt,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -111,6 +114,7 @@ def main(port: str, id: int, baud: int, use_pyserial: bool):
 
     # Shutdown the environment
     env.close()
+
 
 def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
