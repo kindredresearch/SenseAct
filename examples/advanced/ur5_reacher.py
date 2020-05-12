@@ -12,6 +12,8 @@ import baselines.common.tf_util as U
 from multiprocessing import Process, Value, Manager
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
+from senseact.sharedbuffer import SharedBuffer
+from senseact.devices.ur.ur_communicator import URCommunicator
 
 from senseact.envs.ur.reacher_env import ReacherEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
@@ -25,10 +27,23 @@ def main(ip):
     np.random.set_state(rand_state)
     tf_set_seeds(np.random.randint(1, 2**31 - 1))
 
+    comm_name = "UR5"
+    obs_history = 1
+    communicator_setups = {comm_name:
+        {
+            'Communicator': URCommunicator,
+            'num_sensor_packets': obs_history,
+
+            'kwargs': {'host': ip,
+                       'actuation_sync_period': 1,
+                       'buffer_len': obs_history + SharedBuffer.DEFAULT_BUFFER_LEN,
+                       }
+        }
+    }
+
     # Create UR5 Reacher2D environment
     env = ReacherEnv(
             setup="UR5_default",
-            host=ip,
             dof=2,
             control_type="velocity",
             target_type="position",
@@ -37,6 +52,7 @@ def main(ip):
             derivative_type="none",
             deriv_action_max=5,
             first_deriv_max=2,
+            obs_history=obs_history,
             accel_max=1.4,
             speed_max=0.3,
             speedj_a=1.4,
@@ -47,7 +63,6 @@ def main(ip):
             run_mode="multiprocess",
             rllab_box=False,
             movej_t=2.0,
-            delay=0.0,
             random_state=rand_state
         )
     env = NormalizedEnv(env)
