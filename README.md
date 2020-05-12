@@ -37,6 +37,10 @@ Currently we only support MX-64AT.
 
 Mahmood et al. (2018b) provide extensive results comparing multiple reinforcement learning algorithms on the above tasks, and Mahmood et al. (2018a) show the effect of different task-setup elements in learning. Their results can be reproduced by using this repository (see [documentation](docs/) for more information).
 
+# Versions
+
+The branch `master` is the latest official release and `dev` is current development branch.
+
 # Installation
 
 SenseAct uses Python3 (>=3.5), and all other requirements are automatically installed via pip.
@@ -46,7 +50,12 @@ On Linux and Mac OS X, run the following:
 1. `cd SenseAct`
 1. `pip install -e .` or `pip3 install -e .` depends on your setup
 
+To replicate experimental results from the paper please install the tag v0.1.1 from the git repo.
+1. `git fetch --all --tags`
+1. `git checkout tags/v0.1.1`
+
 Additional instruction for installing [OpenAI Baselines](https://github.com/openai/baselines) needed for running the [advanced examples](examples/advanced) is given in the [corresponding readme](examples/).
+
 
 ### Additional installation steps for Dynamixel-based tasks (Linux only)
 
