@@ -5,42 +5,59 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 import argparse
-import time
 import copy
-
-import numpy as np
-import baselines.common.tf_util as U
-
-from baselines.trpo_mpi.trpo_mpi import learn
-from baselines.ppo1.mlp_policy import MlpPolicy
-from senseact.envs.dxl.dxl_tracker_env import DxlTracker1DEnv
-from senseact.utils import tf_set_seeds, NormalizedEnv
+import time
 from multiprocessing import Process, Value, Manager
+
+import baselines.common.tf_util as U
+import numpy as np
+from baselines.ppo1.mlp_policy import MlpPolicy
+from baselines.trpo_mpi.trpo_mpi import learn
 from helper import create_callback
 
-def main(port, id, baud):
+from senseact.devices.dxl import dxl_communicator as gcomm
+from senseact.envs.dxl.dxl_tracker_env import DxlTracker1DEnv
+from senseact.utils import tf_set_seeds, NormalizedEnv
+
+
+def main(port: str, id: int, baud: int, use_pyserial: bool):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
-    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+    tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
+
+    obs_history = 1
+    comm_name = "DXL"
+    communicator_setups = {
+        comm_name: {
+            'Communicator': gcomm.DXLCommunicator,
+            'num_sensor_packets': obs_history,
+            'kwargs': {
+                "idn": id,
+                "baudrate": baud,
+                "sensor_dt": 0.01,
+                "device_path": port,
+                "use_ctypes_driver": use_pyserial
+            }
+        }
+    }
 
     # Create DXL Tracker1D environment
     env = DxlTracker1DEnv(setup='dxl_tracker_default',
-                          dxl_dev_path=port,
-                          idn=id,
-                          baudrate=baud,
-                          obs_history=1,
+                          communicator_setups=communicator_setups,
+                          actuator_name=comm_name,
+                          sensor_name=comm_name,
+                          obs_history=obs_history,
                           dt=0.04,
-                          gripper_dt=0.01,
+                          sensor_dt=0.01,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=4,
-                          max_torque_mag = 50,
+                          max_torque_mag=50,
                           control_type='torque',
                           target_type='position',
                           reset_type='zero',
                           reward_type='linear',
-                          use_ctypes_driver=True,
                           random_state=rand_state
                           )
 
@@ -55,9 +72,10 @@ def main(port, id, baud):
     # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
+
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+                         hid_size=32, num_hid_layers=2)
 
     # create and start plotting process
     plot_running = Value('i', 1)
@@ -92,6 +110,7 @@ def main(port, id, baud):
 
     # Shutdown the environment
     env.close()
+
 
 def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL tracker task and plots episodic returns
@@ -168,14 +187,13 @@ def plot_dxl_tracker(env, batch_size, shared_returns, plot_running):
         fig.canvas.flush_events()
         count += 1
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
+    parser.add_argument("--use_pyserial", action="store_true", default=False)
     args = parser.parse_args()
 
     main(**args.__dict__)
-
-
-

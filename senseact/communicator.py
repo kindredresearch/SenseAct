@@ -9,7 +9,7 @@ import os
 import signal
 
 from threading import Thread
-from multiprocessing import Process
+from multiprocessing import Process, Event
 
 from senseact.sharedbuffer import SharedBuffer
 
@@ -47,7 +47,7 @@ class Communicator(Process):
             from the buffer by _actuator_handler
     """
 
-    def __init__(self, sensor_args, actuator_args, use_sensor=True, use_actuator=True):
+    def __init__(self, sensor_args, actuator_args, use_sensor=True, use_actuator=True, start_timeout=1.0):
         """Inits communicator class with device-specific sensor and actuation arguments.
 
         Args:
@@ -66,6 +66,8 @@ class Communicator(Process):
                 sensory data
             use_actuator: a boolean, indicating whether communicator will transfer
                 actuation data (e.g. video cameras may not have actuations)
+            start_up_time: How long to wait for start up. If the communicator does not start up in this time then
+                an exception will be thrown by the environment.
         """
         super(Communicator, self).__init__()
         self.use_sensor = use_sensor
@@ -75,11 +77,16 @@ class Communicator(Process):
         self._actuator_thread = None
         self._sensor_running = False
         self._actuator_running = False
+        self.start_timeout = start_timeout
+        self._ready = Event()
         if self.use_sensor:
             self.sensor_buffer = SharedBuffer(**sensor_args)
 
         if self.use_actuator:
             self.actuator_buffer = SharedBuffer(**actuator_args)
+
+    def is_ready(self):
+        return self._ready.is_set()
 
     def run(self):
         """Starts sensor and actuator related threads/processes if they exist."""
@@ -92,6 +99,8 @@ class Communicator(Process):
 
         if self.use_actuator:
             self._actuator_start()
+
+        self._ready.set()
 
         while self._sensor_running or self._actuator_running:
             # if parent pid is no longer the same (1 on Linux if re-parented to init), then

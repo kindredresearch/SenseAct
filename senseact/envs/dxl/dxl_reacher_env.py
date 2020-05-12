@@ -44,6 +44,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                  reward_type='linear',
                  delay=0,
                  max_velocity=5,
+                 start_timeout=None,
                  **kwargs
                  ):
         """ Inits DxlReacher1DEnv class with task and servo specific parameters.
@@ -64,10 +65,16 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             obs_history: An integer number of sensory packets concatenated
                 into a single observation vector
             dt: A float specifying duration of an environment time step
+<<<<<<< HEAD
                 in seconds.
             sensor_dt: A float representing DXLCommunicator cycle time.
                 This does not control the cycle time, but is used in PID control for resetting the motor at the
                 start of an episode.
+=======
+                in seconds. Default is 0.04.
+            sensor_dt: A float specifying the cycle time used by communicator - this is ONLY used
+                for the internal PID controller used for resets.
+>>>>>>> csherstan/extract_communicator
             rllab_box: A bool specifying whether to wrap environment
                 action and observation spaces into an RllabBox object
                 (required for off-the-shelf rllab algorithms implementations).
@@ -94,6 +101,10 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             use_ctypes_driver: A bool. Setting it to True chooses CType-based driver.
                 We found the CType-based driver to provide substantially more timely
                 and precise communication compared to the pyserial-based one.
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                            If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                            -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                            take precedence over the start_timeout values set on the communicators.
             **kwargs: Keyword arguments
         """
 
@@ -195,6 +206,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             action_dim=1,
             observation_dim=self.observation_space.shape[0],
             dt=dt,
+            start_timeout=start_timeout,
             **kwargs
         )
 

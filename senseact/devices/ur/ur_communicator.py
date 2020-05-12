@@ -11,6 +11,7 @@ from senseact.devices.ur import ur_utils
 from senseact.sharedbuffer import SharedBuffer
 from threading import Lock
 
+
 class URCommunicator(Communicator):
     """Communicator class for UR5 robot.
 
@@ -29,8 +30,9 @@ class URCommunicator(Communicator):
     def __init__(self, host,
                  actuation_sync_period=True,
                  disable_nagle_algorithm=True,
-                 speedj_timeout = 0.5,
-                 buffer_len=None
+                 speedj_timeout=0.5,
+                 buffer_len=None,
+                 start_timeout=1.0
                  ):
         """Inits URCommunicator class with device- and task-specific parameters.
 
@@ -71,7 +73,8 @@ class URCommunicator(Communicator):
         super(URCommunicator, self).__init__(use_sensor=True,
                                              use_actuator=True,
                                              sensor_args=sensor_args,
-                                             actuator_args=actuator_args)
+                                             actuator_args=actuator_args,
+                                             start_timeout=start_timeout)
 
         # make connections
         self._sock = URCommunicator.make_connection(
@@ -84,7 +87,7 @@ class URCommunicator(Communicator):
         self._dashboard_sock = URCommunicator.make_connection(
             host=self._host,
             port=ur_utils.DASHBOARD_SERVER_PORT,
-            disable_nagle_algorithm = self._disable_nagle_algorithm
+            disable_nagle_algorithm=self._disable_nagle_algorithm
         )
         time.sleep(0.5)
 
@@ -131,7 +134,7 @@ class URCommunicator(Communicator):
             else:
                 print('', e, ': Lost socket to UR, going into reconnect loop')
             self._stop = True
-            time.sleep(ur_utils.ACTUATOR_DT*2)  # to let _actuator_handler thread return
+            time.sleep(ur_utils.ACTUATOR_DT * 2)  # to let _actuator_handler thread return
             self._sock.close()
             self._dashboard_sock.close()
             self._sock = self.make_connection(self._host,
@@ -140,7 +143,7 @@ class URCommunicator(Communicator):
                                               )
             self._dashboard_sock = self.make_connection(self._host,
                                                         ur_utils.DASHBOARD_SERVER_PORT,
-                                                        disable_nagle_algorithm = self._disable_nagle_algorithm
+                                                        disable_nagle_algorithm=self._disable_nagle_algorithm
                                                         )
             self._stop = False
         except Exception as e:

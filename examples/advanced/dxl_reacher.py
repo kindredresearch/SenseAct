@@ -20,7 +20,9 @@ from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
 
-def main(port, id, baud, use_pyserial):
+def main(port: str, id: int, baud: int, use_pyserial: bool):
+    tag = str(time.time())
+
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
@@ -37,7 +39,7 @@ def main(port, id, baud, use_pyserial):
             'kwargs': {
                 "idn": id,
                 "baudrate": baud,
-                "sensor_dt": 0.01,
+                "sensor_dt": sensor_dt,
                 "device_path": port,
                 "use_ctypes_driver": not use_pyserial
             }
@@ -85,7 +87,7 @@ def main(port, id, baud, use_pyserial):
                                      "episodic_returns": [],
                                      "episodic_lengths": [], })
     # Plotting process
-    pp = Process(target=plot_dxl_reacher, args=(env, 2048, shared_returns, plot_running))
+    pp = Process(target=plot_dxl_reacher, args=(tag, env, 2048, shared_returns, plot_running))
     pp.start()
 
     # Create callback function for logging data from baselines TRPO learn
@@ -114,7 +116,7 @@ def main(port, id, baud, use_pyserial):
     env.close()
 
 
-def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
+def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
 
     Args:
@@ -183,11 +185,16 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
                 hl11.set_xdata(np.arange(1, len(rets) + 1) * x_tick)
                 ax2.set_xlim([x_tick, len(rets) * x_tick])
                 hl11.set_ydata(rets)
-                ax2.set_ylim([np.min(rets), np.max(rets) + 50])
+                buffer = abs(np.max(rets) - np.min(rets)) * 0.05
+                ax2.set_ylim([np.min(rets) - buffer, np.max(rets) + buffer])
         time.sleep(0.01)
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
+
+    # Save just the portion _inside_ the second axis's boundaries
+    extent = ax2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig('{}.png'.format(tag), bbox_inches=extent.expanded(1.1, 1.1))
 
 
 if __name__ == '__main__':

@@ -3,14 +3,14 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import time
 import signal
-
+import time
 from math import pi
 from threading import Lock
-from senseact.sharedbuffer import SharedBuffer
+
 from senseact.communicator import Communicator
 from senseact.devices.dxl import dxl_mx64
+from senseact.sharedbuffer import SharedBuffer
 
 
 class DXLCommunicator(Communicator):
@@ -27,6 +27,7 @@ class DXLCommunicator(Communicator):
                  sensor_dt=0.006,
                  device_path='None',
                  use_ctypes_driver=True,
+                 start_timeout=1.0
                  ):
         """ Inits DXLCommunicator class with device and task-specific parameters.
 
@@ -73,7 +74,8 @@ class DXLCommunicator(Communicator):
         super(DXLCommunicator, self).__init__(use_sensor=True,
                                               use_actuator=True,
                                               sensor_args=sensor_args,
-                                              actuator_args=actuator_args)
+                                              actuator_args=actuator_args,
+                                              start_timeout=start_timeout)
 
         self.just_read = 0
         self.just_read_lock = Lock()

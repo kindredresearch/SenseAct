@@ -4,3 +4,5 @@ __pycache__
 *.pyc
 senseact/lib/
 senseact.egg-info/
+*.png
+*.pkl
