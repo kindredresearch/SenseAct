@@ -65,16 +65,9 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             obs_history: An integer number of sensory packets concatenated
                 into a single observation vector
             dt: A float specifying duration of an environment time step
-<<<<<<< HEAD
-                in seconds.
-            sensor_dt: A float representing DXLCommunicator cycle time.
-                This does not control the cycle time, but is used in PID control for resetting the motor at the
-                start of an episode.
-=======
                 in seconds. Default is 0.04.
             sensor_dt: A float specifying the cycle time used by communicator - this is ONLY used
                 for the internal PID controller used for resets.
->>>>>>> csherstan/extract_communicator
             rllab_box: A bool specifying whether to wrap environment
                 action and observation spaces into an RllabBox object
                 (required for off-the-shelf rllab algorithms implementations).
