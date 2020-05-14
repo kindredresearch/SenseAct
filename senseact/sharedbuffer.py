@@ -173,3 +173,67 @@ class SharedBuffer(object):
         self._access_lock.acquire()
         self._data_updated.value = value
         self._access_lock.release()
+
+
+class Command:
+    sizes = {}
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def from_array(cls, the_array):
+        obj = cls()
+        idx = 0
+        for key in sorted(obj.__dict__.keys()):
+            size = cls.sizes.get(key, 1)
+            if size == 1:
+                setattr(obj, key, the_array[idx])
+            else:
+                setattr(obj, key, the_array[idx:idx + size].tolist())
+
+            idx += size
+
+        return obj
+
+    def to_array(self):
+        out = []
+        for key in sorted(self.__dict__.keys()):
+            val = self.__dict__[key]
+            if type(val) is list:
+                out.extend(val)
+            else:
+                out.append(val)
+        return out
+
+    def __array__(self):
+        return np.array(self.to_array())
+
+
+class SharedBufferSerializer:
+    def __init__(self, commands: list):
+        """
+
+        :param dictionary: A mapping
+        """
+        self.commands = list(commands)
+        self.dictionary = {word: idx for idx, word in enumerate(self.commands)}
+
+    def marshall(self, object: Command) -> np.ndarray:
+        if type(object) not in self.dictionary:
+            raise ValueError
+
+        out = [self.dictionary[type(object)]]
+        out.extend(object.to_array)
+        return np.array(out)
+
+    def demarshall(self, nparray: np.ndarray) -> object:
+        cmd_idx = nparray[0]
+        if cmd_idx < 0 or cmd_idx >= len(self.commands):
+            raise ValueError
+
+        clz = self.commands[cmd_idx]
+        instance = clz()
+        for idx, key in enumerate(sorted(instance.__dict__.keys())):
+            setattr(instance, key, nparray[idx + 1])
+        return instance

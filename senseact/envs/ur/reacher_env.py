@@ -3,17 +3,18 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import numpy as np
-import time
-import gym
-import sys
 from multiprocessing import Array, Value
 
-from senseact.rtrl_base_env import RTRLBaseEnv
+import gym
+import numpy as np
+import sys
+import time
+
+from senseact import utils
 from senseact.devices.ur import ur_utils
 from senseact.devices.ur.ur_setups import setups
-from senseact.sharedbuffer import SharedBuffer
-from senseact import utils
+from senseact.rtrl_base_env import RTRLBaseEnv
+from senseact.sharedbuffer import SharedBufferSerializer
 
 
 class ReacherEnv(RTRLBaseEnv, gym.core.Env):
@@ -264,19 +265,25 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # The last action
         self._action_ = self._rand_obj_.uniform(self._action_low, self._action_high)
 
+        # TODO: serializer should be something that is passed in I think
+        self.serializer = SharedBufferSerializer()
+
         # Defining packet structure for quickly building actions
-        self._reset_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._reset_packet = np.ones(
+            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._reset_packet[0] = ur_utils.COMMANDS['MOVEJ']['id']
         self._reset_packet[1:1 + 6] = self._q_ref
         self._reset_packet[-2] = movej_t
 
-        self._servoj_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._servoj_packet = np.ones(
+            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._servoj_packet[0] = ur_utils.COMMANDS['SERVOJ']['id']
         self._servoj_packet[1:1 + 6] = self._q_ref
         self._servoj_packet[-3] = servoj_t
         self._servoj_packet[-1] = servoj_gain
 
-        self._speedj_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._speedj_packet = np.ones(
+            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._speedj_packet[0] = ur_utils.COMMANDS['SPEEDJ']['id']
         self._speedj_packet[1:1 + 6] = np.zeros((6,))
         self._speedj_packet[-2] = speedj_a

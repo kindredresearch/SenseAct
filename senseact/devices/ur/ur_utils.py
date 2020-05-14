@@ -9,6 +9,8 @@ from math import sin, cos, fabs, asin, acos, sqrt, atan2
 from math import pi as PI
 import numpy as np
 
+from senseact.sharedbuffer import Command
+
 DASHBOARD_SERVER_PORT = 29999  # to unlock protective stop
 PRIMARY_CLIENT_INTERFACE_PORT = 30001
 SECONDARY_CLIENT_INTERFACE_PORT = 30002
@@ -25,7 +27,7 @@ COMMANDS = {
         {
             'id': 1,
             'size': 9,
-            'default': # as suggested by URScript API
+            'default':  # as suggested by URScript API
                 {
                     't': 0.008,
                     'lookahead_time': 0.1,
@@ -121,6 +123,7 @@ REALTIME_COMM_PACKET = np.dtype(
      ('program_state', '>f8'),
      ])
 
+
 class SafetyModes(object):
     """
     UR5 Safety Modes (for firmware 3.3, 3.4)
@@ -137,8 +140,7 @@ class SafetyModes(object):
     NORMAL = 1
     NONE = 0
 
-
-class ServoJ(object):
+class ServoJ(Command):
     """Represents ServoJ UR5 command.
 
     ServoJ command facilitates online control in joint space.
@@ -157,8 +159,9 @@ class ServoJ(object):
         gain: a float representing a proportional gain for following
             target position, range [100,2000]
     """
+    sizes = {"q": 6}
 
-    def __init__(self, q,
+    def __init__(self, q=None,
                  t=COMMANDS['SERVOJ']['default']['t'],
                  lookahead_time=COMMANDS['SERVOJ']['default']['lookahead_time'],
                  gain=COMMANDS['SERVOJ']['default']['gain']):
@@ -167,6 +170,7 @@ class ServoJ(object):
         Args:
             See class attributes description.
         """
+        super().__init__()
         self.q = q
         self.t = t
         self.lookahead_time = lookahead_time
@@ -177,7 +181,7 @@ class ServoJ(object):
             *(list(self.q) + [self.t, self.lookahead_time, self.gain]))
 
 
-class SpeedJ(object):
+class SpeedJ(Command):
     """Represents SpeedJ UR5 command.
 
     SpeedJ command accelerates to and moves the arm with constant
@@ -188,8 +192,9 @@ class SpeedJ(object):
         a: a float specifying joint acceleration in rad/sˆ2 (of leading axis)
         t_min: a float specifying minimal time before function returns
     """
+    sizes = {'qd': 6}
 
-    def __init__(self, qd,
+    def __init__(self, qd=None,
                  a=COMMANDS['SPEEDJ']['default']['a'],
                  t_min=COMMANDS['SPEEDJ']['default']['t_min']):
         """Inits the ServoJ object with command parameters.
@@ -197,6 +202,7 @@ class SpeedJ(object):
         Args:
             See class attributes description.
         """
+        super().__init__()
         self.qd = qd
         self.a = a
         self.t_min = t_min
@@ -206,7 +212,7 @@ class SpeedJ(object):
             *(list(self.qd) + [self.a, self.t_min]))
 
 
-class MoveJ(object):
+class MoveJ(Command):
     """Represents MoveJ UR5 command.
 
     MoveJ command moves thge arm to a given position
@@ -232,8 +238,8 @@ class MoveJ(object):
         t: a float specifying duration of the command in s
         r: a float specifying blend radius in m
     """
-
-    def __init__(self, q,
+    sizes = {'q': 6}
+    def __init__(self, q=None,
                  a=COMMANDS['MOVEJ']['default']['a'],
                  v=COMMANDS['MOVEJ']['default']['v'],
                  t=COMMANDS['MOVEJ']['default']['t'],
@@ -243,6 +249,7 @@ class MoveJ(object):
         Args:
             See class attributes description.
         """
+        super().__init__()
         self.q = q
         self.a = a
         self.v = v
@@ -253,7 +260,8 @@ class MoveJ(object):
         return 'movej([{}, {}, {}, {}, {}, {}], a={}, v={}, t={}, r={})'.format(
             *(list(self.q) + [self.a, self.v, self.t, self.r]))
 
-class MoveL(object):
+
+class MoveL(Command):
     """Represnts MoveL UR5 command.
 
     MoveL command moves the arm to position (linear in tool-space).
@@ -269,7 +277,9 @@ class MoveL(object):
         r: a float specifying blend radius in m
     """
 
-    def __init__(self, pose,
+    sizes = {'a': 3}
+
+    def __init__(self, pose=None,
                  a=COMMANDS['MOVEL']['default']['a'],
                  v=COMMANDS['MOVEL']['default']['v'],
                  t=COMMANDS['MOVEL']['default']['t'],
@@ -279,6 +289,7 @@ class MoveL(object):
         Args:
             See class attributes description.
         """
+        super().__init__()
         self.pose = pose
         self.a = a
         self.v = v
@@ -290,7 +301,7 @@ class MoveL(object):
             *(list(self.pose) + [self.a, self.v, self.t, self.r]))
 
 
-class StopJ(object):
+class StopJ(Command):
     """Represents StopJ UR5 command.
 
     StopJ decellerates joint speeds to zero.
@@ -305,6 +316,7 @@ class StopJ(object):
         Args:
             See class attributes description.
         """
+        super().__init__()
         self.a = a
 
     def __repr__(self):
@@ -313,7 +325,8 @@ class StopJ(object):
 
 ZERO_THRESH = 0.00000001;
 
-#UR5
+
+# UR5
 # d1 =  0.089159;
 # a2 = -0.42500;
 # a3 = -0.39225;
@@ -323,6 +336,7 @@ ZERO_THRESH = 0.00000001;
 
 def sign(x):
     return 1 if x > 0 else 0 if x == 0 else -1
+
 
 def forward(q, params):
     """Computes forward kinematics solutions.
@@ -337,7 +351,6 @@ def forward(q, params):
     """
     d1, a2, a3, d4, d5, d6 = params
 
-
     s1, s2, s3, s4, s5, s6 = np.sin(q)
     c1, c2, c3, c4, c5, c6 = np.cos(q)
     del s4, c4
@@ -349,40 +362,41 @@ def forward(q, params):
 
     T = np.zeros(16)
 
-    T[0] = ((c1*c234-s1*s234)*s5)/2.0 - c5*s1 + ((c1*c234+s1*s234)*s5)/2.0;
+    T[0] = ((c1 * c234 - s1 * s234) * s5) / 2.0 - c5 * s1 + ((c1 * c234 + s1 * s234) * s5) / 2.0;
 
-    T[1] = (c6*(s1*s5 + ((c1*c234-s1*s234)*c5)/2.0 + ((c1*c234+s1*s234)*c5)/2.0) -
-            (s6*((s1*c234+c1*s234) - (s1*c234-c1*s234)))/2.0);
+    T[1] = (c6 * (s1 * s5 + ((c1 * c234 - s1 * s234) * c5) / 2.0 + ((c1 * c234 + s1 * s234) * c5) / 2.0) -
+            (s6 * ((s1 * c234 + c1 * s234) - (s1 * c234 - c1 * s234))) / 2.0);
 
-    T[2] = (-(c6*((s1*c234+c1*s234) - (s1*c234-c1*s234)))/2.0 -
-            s6*(s1*s5 + ((c1*c234-s1*s234)*c5)/2.0 + ((c1*c234+s1*s234)*c5)/2.0));
+    T[2] = (-(c6 * ((s1 * c234 + c1 * s234) - (s1 * c234 - c1 * s234))) / 2.0 -
+            s6 * (s1 * s5 + ((c1 * c234 - s1 * s234) * c5) / 2.0 + ((c1 * c234 + s1 * s234) * c5) / 2.0));
 
-    T[3] = ((d5*(s1*c234-c1*s234))/2.0 - (d5*(s1*c234+c1*s234))/2.0 -
-            d4*s1 + (d6*(c1*c234-s1*s234)*s5)/2.0 + (d6*(c1*c234+s1*s234)*s5)/2.0 -
-            a2*c1*c2 - d6*c5*s1 - a3*c1*c2*c3 + a3*c1*s2*s3);
+    T[3] = ((d5 * (s1 * c234 - c1 * s234)) / 2.0 - (d5 * (s1 * c234 + c1 * s234)) / 2.0 -
+            d4 * s1 + (d6 * (c1 * c234 - s1 * s234) * s5) / 2.0 + (d6 * (c1 * c234 + s1 * s234) * s5) / 2.0 -
+            a2 * c1 * c2 - d6 * c5 * s1 - a3 * c1 * c2 * c3 + a3 * c1 * s2 * s3);
 
-    T[4] = c1*c5 + ((s1*c234+c1*s234)*s5)/2.0 + ((s1*c234-c1*s234)*s5)/2.0;
+    T[4] = c1 * c5 + ((s1 * c234 + c1 * s234) * s5) / 2.0 + ((s1 * c234 - c1 * s234) * s5) / 2.0;
 
-    T[5] = (c6*(((s1*c234+c1*s234)*c5)/2.0 - c1*s5 + ((s1*c234-c1*s234)*c5)/2.0) +
-            s6*((c1*c234-s1*s234)/2.0 - (c1*c234+s1*s234)/2.0));
+    T[5] = (c6 * (((s1 * c234 + c1 * s234) * c5) / 2.0 - c1 * s5 + ((s1 * c234 - c1 * s234) * c5) / 2.0) +
+            s6 * ((c1 * c234 - s1 * s234) / 2.0 - (c1 * c234 + s1 * s234) / 2.0));
 
-    T[6] = (c6*((c1*c234-s1*s234)/2.0 - (c1*c234+s1*s234)/2.0) -
-            s6*(((s1*c234+c1*s234)*c5)/2.0 - c1*s5 + ((s1*c234-c1*s234)*c5)/2.0))
+    T[6] = (c6 * ((c1 * c234 - s1 * s234) / 2.0 - (c1 * c234 + s1 * s234) / 2.0) -
+            s6 * (((s1 * c234 + c1 * s234) * c5) / 2.0 - c1 * s5 + ((s1 * c234 - c1 * s234) * c5) / 2.0))
 
-    T[7] = ((d5*(c1*c234-s1*s234))/2.0 - (d5*(c1*c234+s1*s234))/2.0 + d4*c1 +
-            (d6*(s1*c234+c1*s234)*s5)/2.0 + (d6*(s1*c234-c1*s234)*s5)/2.0 + d6*c1*c5 -
-            a2*c2*s1 - a3*c2*c3*s1 + a3*s1*s2*s3);
+    T[7] = ((d5 * (c1 * c234 - s1 * s234)) / 2.0 - (d5 * (c1 * c234 + s1 * s234)) / 2.0 + d4 * c1 +
+            (d6 * (s1 * c234 + c1 * s234) * s5) / 2.0 + (d6 * (s1 * c234 - c1 * s234) * s5) / 2.0 + d6 * c1 * c5 -
+            a2 * c2 * s1 - a3 * c2 * c3 * s1 + a3 * s1 * s2 * s3);
 
-    T[8] = ((c234*c5-s234*s5)/2.0 - (c234*c5+s234*s5)/2.0);
+    T[8] = ((c234 * c5 - s234 * s5) / 2.0 - (c234 * c5 + s234 * s5) / 2.0);
 
-    T[9] = ((s234*c6-c234*s6)/2.0 - (s234*c6+c234*s6)/2.0 - s234*c5*c6);
+    T[9] = ((s234 * c6 - c234 * s6) / 2.0 - (s234 * c6 + c234 * s6) / 2.0 - s234 * c5 * c6);
 
-    T[10] = (s234*c5*s6 - (c234*c6+s234*s6)/2.0 - (c234*c6-s234*s6)/2.0);
+    T[10] = (s234 * c5 * s6 - (c234 * c6 + s234 * s6) / 2.0 - (c234 * c6 - s234 * s6) / 2.0);
 
-    T[11] = (d1 + (d6*(c234*c5-s234*s5))/2.0 + a3*(s2*c3+c2*s3) + a2*s2 -
-             (d6*(c234*c5+s234*s5))/2.0 - d5*c234);
+    T[11] = (d1 + (d6 * (c234 * c5 - s234 * s5)) / 2.0 + a3 * (s2 * c3 + c2 * s3) + a2 * s2 -
+             (d6 * (c234 * c5 + s234 * s5)) / 2.0 - d5 * c234);
     T[15] = 1.0
     return T.reshape(4, 4)
+
 
 def inverse(T, wrist_desired, params):
     """Computes inverse kinematics solutions.
@@ -403,50 +417,50 @@ def inverse(T, wrist_desired, params):
 
     T = T.flatten()
     T02 = -T[0]
-    T00 =  T[1]
-    T01 =  T[2]
+    T00 = T[1]
+    T01 = T[2]
     T03 = -T[3]
     T12 = -T[4]
-    T10 =  T[5]
-    T11 =  T[6]
+    T10 = T[5]
+    T11 = T[6]
     T13 = -T[7]
-    T22 =  T[8]
+    T22 = T[8]
     T20 = -T[9]
     T21 = -T[10]
-    T23 =  T[11]
+    T23 = T[11]
 
     # Q1
     q1 = [0.0, 0.0]
-    A = d6*T12 - T13;
-    B = d6*T02 - T03;
-    R = A*A + B*B;
+    A = d6 * T12 - T13;
+    B = d6 * T02 - T03;
+    R = A * A + B * B;
 
     if (fabs(A) < ZERO_THRESH):
         if (fabs(fabs(d4) - fabs(B)) < ZERO_THRESH):
-            div = -sign(d4)*sign(B);
+            div = -sign(d4) * sign(B);
         else:
-            div = -d4/B;
+            div = -d4 / B;
         arcsin = asin(div);
         if (fabs(arcsin) < ZERO_THRESH):
             arcsin = 0.0;
-        if(arcsin < 0.0):
-            q1[0] = arcsin + 2.0*PI;
+        if (arcsin < 0.0):
+            q1[0] = arcsin + 2.0 * PI;
         else:
             q1[0] = arcsin;
         q1[1] = PI - arcsin;
 
     elif (fabs(B) < ZERO_THRESH):
         if (fabs(fabs(d4) - fabs(A)) < ZERO_THRESH):
-            div = sign(d4)*sign(A);
+            div = sign(d4) * sign(A);
         else:
-            div = d4/A;
+            div = d4 / A;
         arccos = acos(div);
         q1[0] = arccos;
-        q1[1] = 2.0*PI - arccos;
-    elif(d4*d4 > R):
+        q1[1] = 2.0 * PI - arccos;
+    elif (d4 * d4 > R):
         return []
     else:
-        arccos = acos(d4 / sqrt(R)) ;
+        arccos = acos(d4 / sqrt(R));
         arctan = atan2(-B, A);
         pos = arccos + arctan;
         neg = -arccos + arctan;
@@ -455,26 +469,26 @@ def inverse(T, wrist_desired, params):
             pos = 0.0;
         if (fabs(neg) < ZERO_THRESH):
             neg = 0.0;
-        if(pos >= 0.0):
+        if (pos >= 0.0):
             q1[0] = pos;
         else:
-            q1[0] = 2.0*PI + pos;
+            q1[0] = 2.0 * PI + pos;
         if (neg >= 0.0):
             q1[1] = neg;
         else:
-            q1[1] = 2.0*PI + neg;
+            q1[1] = 2.0 * PI + neg;
 
     # Q5
     q5 = [[0.0, 0.0], [0.0, 0.0]];
     for i in [0, 1]:
-        numer = (T03*sin(q1[i]) - T13*cos(q1[i])-d4);
+        numer = (T03 * sin(q1[i]) - T13 * cos(q1[i]) - d4);
         if (fabs(fabs(numer) - fabs(d6)) < ZERO_THRESH):
             div = sign(numer) * sign(d6);
         else:
             div = numer / d6;
         arccos = acos(div);
         q5[i][0] = arccos;
-        q5[i][1] = 2.0*PI - arccos;
+        q5[i][1] = 2.0 * PI - arccos;
 
     # Q234 here we go...
     for i in [0, 1]:
@@ -487,8 +501,8 @@ def inverse(T, wrist_desired, params):
             if (fabs(s5) < ZERO_THRESH):
                 q6 = wrist_desired;
             else:
-                q6 = atan2(sign(s5)*-(T01*s1 - T11*c1),
-                           sign(s5)*(T00*s1 - T10*c1));
+                q6 = atan2(sign(s5) * -(T01 * s1 - T11 * c1),
+                           sign(s5) * (T00 * s1 - T10 * c1));
                 if (fabs(q6) < ZERO_THRESH):
                     q6 = 0.0
                 if (q6 < 0.0):
@@ -500,40 +514,40 @@ def inverse(T, wrist_desired, params):
 
             c6 = cos(q6)
             s6 = sin(q6)
-            x04x = -s5*(T02*c1 + T12*s1) - c5*(s6*(T01*c1 + T11*s1) - c6*(T00*c1 + T10*s1));
-            x04y = c5*(T20*c6 - T21*s6) - T22*s5;
-            p13x = (d5*(s6*(T00*c1 + T10*s1) + c6*(T01*c1 + T11*s1))
-                    - d6*(T02*c1 + T12*s1) + T03*c1 + T13*s1)
-            p13y = T23 - d1 - d6*T22 + d5*(T21*c6 + T20*s6);
-            c3 = (p13x*p13x + p13y*p13y - a2*a2 - a3*a3) / (2.0*a2*a3);
-            if(fabs(fabs(c3) - 1.0) < ZERO_THRESH):
+            x04x = -s5 * (T02 * c1 + T12 * s1) - c5 * (s6 * (T01 * c1 + T11 * s1) - c6 * (T00 * c1 + T10 * s1));
+            x04y = c5 * (T20 * c6 - T21 * s6) - T22 * s5;
+            p13x = (d5 * (s6 * (T00 * c1 + T10 * s1) + c6 * (T01 * c1 + T11 * s1))
+                    - d6 * (T02 * c1 + T12 * s1) + T03 * c1 + T13 * s1)
+            p13y = T23 - d1 - d6 * T22 + d5 * (T21 * c6 + T20 * s6);
+            c3 = (p13x * p13x + p13y * p13y - a2 * a2 - a3 * a3) / (2.0 * a2 * a3);
+            if (fabs(fabs(c3) - 1.0) < ZERO_THRESH):
                 c3 = sign(c3)
-            elif(fabs(c3) > 1.0):
+            elif (fabs(c3) > 1.0):
                 continue
             arccos = acos(c3);
             q3[0] = arccos;
-            q3[1] = 2.0*PI - arccos;
-            denom = a2*a2 + a3*a3 + 2*a2*a3*c3;
+            q3[1] = 2.0 * PI - arccos;
+            denom = a2 * a2 + a3 * a3 + 2 * a2 * a3 * c3;
             s3 = sin(arccos)
-            A = (a2 + a3*c3)
-            B = a3*s3
-            q2[0] = atan2((A*p13y - B*p13x) / denom, (A*p13x + B*p13y) / denom);
-            q2[1] = atan2((A*p13y + B*p13x) / denom, (A*p13x - B*p13y) / denom);
-            c23_0 = cos(q2[0]+q3[0]);
-            s23_0 = sin(q2[0]+q3[0]);
-            c23_1 = cos(q2[1]+q3[1]);
-            s23_1 = sin(q2[1]+q3[1]);
-            q4[0] = atan2(c23_0*x04y - s23_0*x04x, x04x*c23_0 + x04y*s23_0);
-            q4[1] = atan2(c23_1*x04y - s23_1*x04x, x04x*c23_1 + x04y*s23_1);
+            A = (a2 + a3 * c3)
+            B = a3 * s3
+            q2[0] = atan2((A * p13y - B * p13x) / denom, (A * p13x + B * p13y) / denom);
+            q2[1] = atan2((A * p13y + B * p13x) / denom, (A * p13x - B * p13y) / denom);
+            c23_0 = cos(q2[0] + q3[0]);
+            s23_0 = sin(q2[0] + q3[0]);
+            c23_1 = cos(q2[1] + q3[1]);
+            s23_1 = sin(q2[1] + q3[1]);
+            q4[0] = atan2(c23_0 * x04y - s23_0 * x04x, x04x * c23_0 + x04y * s23_0);
+            q4[1] = atan2(c23_1 * x04y - s23_1 * x04x, x04x * c23_1 + x04y * s23_1);
             for k in [0, 1]:
-                if(fabs(q2[k]) < ZERO_THRESH):
+                if (fabs(q2[k]) < ZERO_THRESH):
                     q2[k] = 0.0;
-                elif(q2[k] < 0.0):
-                    q2[k] += 2.0*PI;
+                elif (q2[k] < 0.0):
+                    q2[k] += 2.0 * PI;
                 if (fabs(q4[k]) < ZERO_THRESH):
                     q4[k] = 0.0
-                elif(q4[k] < 0.0):
-                    q4[k] += 2.0*PI;
+                elif (q4[k] < 0.0):
+                    q4[k] += 2.0 * PI;
                 q_soln = [q1[i], q2[k], q3[k], q4[k], q5[i][j], q6]
                 rval.append(np.asarray(q_soln))
     for solution in rval:
@@ -544,6 +558,7 @@ def inverse(T, wrist_desired, params):
                 joint_ii -= 2 * np.pi
             solution[ii] = joint_ii
     return rval
+
 
 # sprted according to distance from ref_pos
 def inverse_near(T, wrist_desired, ref_pos, params):
@@ -563,4 +578,4 @@ def inverse_near(T, wrist_desired, ref_pos, params):
          to inverse kinematics problem
     """
     solutions = inverse(T, wrist_desired, params)
-    return sorted(solutions, key=lambda x: np.linalg.norm(x-ref_pos))
+    return sorted(solutions, key=lambda x: np.linalg.norm(x - ref_pos))
