@@ -38,7 +38,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                  episode_length_step=None,
                  episode_length_time=4,
                  dof=1,
-                 max_torque_mag = 300,
+                 max_torque_mag=300,
                  control_type='torque',
                  target_type='position',
                  reset_type='zero',
@@ -47,6 +47,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                  dxl_dev_path='None',
                  max_velocity=5,
                  use_ctypes_driver=True,
+                 start_timeout=None,
                  **kwargs
                  ):
         """ Inits DxlReacher1DEnv class with task and servo specific parameters.
@@ -87,6 +88,10 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             use_ctypes_driver: A bool. Setting it to True chooses CType-based driver.
                 We found the CType-based driver to provide substantially more timely
                 and precise communication compared to the pyserial-based one.
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                            If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                            -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                            take precedence over the start_timeout values set on the communicators.
             **kwargs: Keyword arguments
         """
 
@@ -197,6 +202,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             action_dim=1,
             observation_dim=self.observation_space.shape[0],
             dt=dt,
+            start_timeout=start_timeout,
             **kwargs
         )
 
@@ -226,7 +232,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         # Default initialization
         target_pos = np.random.uniform(low=self.angle_low, high=self.angle_high)
         self.pos_range = self.angle_high - self.angle_low
-        self.reset_pos_center = self.angle_high - (self.pos_range//2)
+        self.reset_pos_center = self.angle_high - (self.pos_range // 2)
         self.action_range = self.action_high - self.action_low
 
         self._reward_ = Value('d', 0.0)
@@ -240,9 +246,9 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         self.nothing_packet = np.zeros(self._actuator_comms[self._comm_name].actuator_buffer.array_len)
 
         # PID control gains for reset
-        self.kp = 161.1444 # Proportional gain
-        self.ki = 0        # Integral gain
-        self.kd = 0        # Derivative gain
+        self.kp = 161.1444  # Proportional gain
+        self.ki = 0  # Integral gain
+        self.kd = 0  # Derivative gain
 
     def _reset_(self):
         """ Resets the environment episode.
@@ -277,10 +283,10 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
                     time.sleep(10)
 
                 error = self._reset_pos_.value - present_pos
-                if abs(error) > 0.017: # ~1 deg
-                    integral = integral + (error*self.gripper_dt)
-                    derivative = (error - error_prior)/self.gripper_dt
-                    action = self.kp*error + self.ki*integral + self.kd*derivative
+                if abs(error) > 0.017:  # ~1 deg
+                    integral = integral + (error * self.gripper_dt)
+                    derivative = (error - error_prior) / self.gripper_dt
+                    action = self.kp * error + self.ki * integral + self.kd * derivative
                     error_prior = error
                 else:
                     break
@@ -296,7 +302,6 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         np.copyto(self._shared_rstate_array_, np.frombuffer(rand_state_array, dtype=rand_state_array_type))
         time.sleep(0.1)  # Give the shared buffer time to get updated and prevent false episode done conditions
         print("Reset done. Gripper pos: {}".format(present_pos))
-
 
     def _compute_sensation_(self, name, sensor_window, timestamp_window, index_window):
         """ Creates and saves an observation vector based on sensory data.
@@ -332,7 +337,8 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         self._present_speed_ = np.array(
             [sensor_window[i][self.reg_index['present_speed']] for i in range(self.obs_history)])
         self._current_ = np.array([sensor_window[i][self.reg_index['current']] for i in range(self.obs_history)])
-        self._temperature_ = np.array([sensor_window[i][self.reg_index['temperature']] for i in range(self.obs_history)])
+        self._temperature_ = np.array(
+            [sensor_window[i][self.reg_index['temperature']] for i in range(self.obs_history)])
 
         self._reward_.value = self._compute_reward()
         done = [0]
@@ -368,9 +374,9 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         """
         if self._temperature_[-1] < self.max_temperature:
             if self._present_pos_[-1] < self.angle_low:
-                self._actuation_packet_[self._comm_name] = self.max_torque_mag//2
+                self._actuation_packet_[self._comm_name] = self.max_torque_mag // 2
             elif self._present_pos_[-1] > self.angle_high:
-                self._actuation_packet_[self._comm_name] = -self.max_torque_mag//2
+                self._actuation_packet_[self._comm_name] = -self.max_torque_mag // 2
             else:
                 self._actuation_packet_[self._comm_name] = action
             self._action_history.append(action)
@@ -392,7 +398,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
             goal_pos = self._target_pos_.value
             present_pos = self._present_pos_
             reward -= abs(goal_pos - present_pos[-1])
-        reward *= self.dt/0.04
+        reward *= self.dt / 0.04
         return np.array([reward])
 
     def _check_done(self, env_done):
@@ -430,7 +436,7 @@ class DxlReacher1DEnv(RTRLBaseEnv, gym.core.Env):
         return float((angle - self.angle_low)) / self.pos_range
 
     def scale_action(self, action):
-        return (2*(action - self.action_low)/ self.action_range) - 1.
+        return (2 * (action - self.action_low) / self.action_range) - 1.
 
     def terminate(self):
         super(DxlReacher1DEnv, self).close()

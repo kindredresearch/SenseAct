@@ -12,6 +12,7 @@ from multiprocessing import Process, Value, Array
 
 from senseact import utils
 from senseact.sharedbuffer import SharedBuffer
+import itertools
 
 
 class RTRLBaseEnv(object):
@@ -36,8 +37,9 @@ class RTRLBaseEnv(object):
                  sleep_time=0.0001,
                  busy_loop=True,
                  random_state=None,
+                 start_timeout=None,
                  **kwargs
-                ):
+                 ):
 
         """Inits RTRLBaseEnv object with task specific parameters.
 
@@ -62,6 +64,10 @@ class RTRLBaseEnv(object):
                 numpy.random.RandomState().get_state(). This is to ensure
                 reproducibility by reusing the same random state externally from
                 an experiment script.
+            start_timeout: The amount of time (in seconds) to wait for all communicators to start.
+                If set to None (default) the longest timeout values set by each communicator will be used. If set to
+                -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
+                take precedence over the start_timeout values set on the communicators.
             sleep_time: a float representing lower bound on sleep() function
                 time resolution provided by OS. For linux based OSes the
                 resolution is typically ~0.001s, for Windows based OSes its ~0.01s.
@@ -76,6 +82,7 @@ class RTRLBaseEnv(object):
         self._dt_tol = dt_tol
         self._sleep_time = sleep_time
         self._busy_loop = busy_loop
+        self.start_timeout = start_timeout
 
         # create random object based on passed random_state tuple
         self._rand_obj_ = np.random.RandomState()
@@ -90,7 +97,6 @@ class RTRLBaseEnv(object):
                                                    dtype=rand_state_array_type)
         np.copyto(self._shared_rstate_array_, np.frombuffer(rand_state_array, dtype=rand_state_array_type))
         self._reset_flag = Value('i', 0)
-
 
         self._action_buffer = SharedBuffer(
             buffer_len=SharedBuffer.DEFAULT_BUFFER_LEN,
@@ -129,6 +135,7 @@ class RTRLBaseEnv(object):
         self._num_sensor_packets = {}
 
         # Construct the communicators without starting
+        # TODO: I think it would be better to use a CommunicatorSetup class than relying on a dict
         for name, setup in communicator_setups.items():
             # Initialize communicator with the given parameters
             comm = setup['Communicator'](**setup['kwargs'])
@@ -157,11 +164,28 @@ class RTRLBaseEnv(object):
         """Starts all manager threads and communicator processes."""
         self._running = True
 
+        waiting_for = []
+        timeout = 0
         # Start the communicator process
-        for comm in self._all_comms.values():
+        for key, comm in self._all_comms.items():
+            timeout = max(timeout, comm.start_timeout)
             comm.start()
+            waiting_for.append((key, comm))
 
-        time.sleep(0.5)  # let the communicator buffer have some packets
+        """
+        If self.start_timeout is -1 then we'll wait indefinitely.
+        If self.start_timeout is None then we use the longest start_timeout specified by all comms.
+        If self.start_timeout is >= 0 then that is the value we will use.
+        """
+        timeout = timeout if self.start_timeout is None else self.start_timeout
+
+        start_time = time.time()
+        while len(waiting_for) > 0:
+            time.sleep(0.5)  # let the communicator buffer have some packets
+            # We're going to wait until the communicators are all online.
+            waiting_for = [kc for kc in itertools.filterfalse(lambda key_comm: key_comm[1].is_ready(), waiting_for)]
+            if (timeout >= 0) and (time.time() - start_time > timeout):
+                raise TimeoutError(f"Timed out waiting for communicators: {[key for key, comm in waiting_for]}")
 
         self._new_obs_time = time.time()
 
@@ -330,7 +354,8 @@ class RTRLBaseEnv(object):
         """
         for name, comm in self._sensor_comms.items():
             if comm.sensor_buffer.updated():
-                sensor_window, timestamp_window, index_window = comm.sensor_buffer.read_update(self._num_sensor_packets[name])
+                sensor_window, timestamp_window, index_window = comm.sensor_buffer.read_update(
+                    self._num_sensor_packets[name])
                 s = self._compute_sensation_(name, sensor_window, timestamp_window, index_window)
                 self._sensation_buffer.write(s)
 
@@ -394,7 +419,7 @@ class RTRLBaseEnv(object):
 
         # check if any communicator has stopped or the polling loop has died
         if any(not comm.is_alive() for comm in self._all_comms.values()) or \
-           (hasattr(self, '_polling_loop') and not self._polling_loop.is_alive()):
+                (hasattr(self, '_polling_loop') and not self._polling_loop.is_alive()):
             logging.error("One of the environment subprocess has died, closing all processes.")
             self.close()
 
