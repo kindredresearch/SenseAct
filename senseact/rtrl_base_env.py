@@ -378,6 +378,9 @@ class RTRLBaseEnv(object):
             self._compute_actuation_(action[0], timestamp, index)
             self._write_actuation_()
 
+    def _post_action_(self, actuator_name, data):
+        self._actuation_packet_[actuator_name][:] = data
+
     def _write_actuation_(self):
         """Sends `actuation_packet`s to all connected actuation communicators."""
         for name, comm in self._actuator_comms.items():

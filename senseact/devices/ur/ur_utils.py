@@ -9,7 +9,7 @@ from math import sin, cos, fabs, asin, acos, sqrt, atan2
 from math import pi as PI
 import numpy as np
 
-from senseact.sharedbuffer import Command
+from senseact.sharedbuffer import Command, SharedBufferSerializer
 
 DASHBOARD_SERVER_PORT = 29999  # to unlock protective stop
 PRIMARY_CLIENT_INTERFACE_PORT = 30001
@@ -140,6 +140,10 @@ class SafetyModes(object):
     NORMAL = 1
     NONE = 0
 
+
+COMMAND_LIST = []
+
+
 class ServoJ(Command):
     """Represents ServoJ UR5 command.
 
@@ -181,6 +185,9 @@ class ServoJ(Command):
             *(list(self.q) + [self.t, self.lookahead_time, self.gain]))
 
 
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(ServoJ, ServoJ.from_array))
+
+
 class SpeedJ(Command):
     """Represents SpeedJ UR5 command.
 
@@ -212,6 +219,9 @@ class SpeedJ(Command):
             *(list(self.qd) + [self.a, self.t_min]))
 
 
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(SpeedJ, SpeedJ.from_array))
+
+
 class MoveJ(Command):
     """Represents MoveJ UR5 command.
 
@@ -239,6 +249,7 @@ class MoveJ(Command):
         r: a float specifying blend radius in m
     """
     sizes = {'q': 6}
+
     def __init__(self, q=None,
                  a=COMMANDS['MOVEJ']['default']['a'],
                  v=COMMANDS['MOVEJ']['default']['v'],
@@ -259,6 +270,9 @@ class MoveJ(Command):
     def __repr__(self):
         return 'movej([{}, {}, {}, {}, {}, {}], a={}, v={}, t={}, r={})'.format(
             *(list(self.q) + [self.a, self.v, self.t, self.r]))
+
+
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(MoveJ, MoveJ.from_array))
 
 
 class MoveL(Command):
@@ -301,6 +315,9 @@ class MoveL(Command):
             *(list(self.pose) + [self.a, self.v, self.t, self.r]))
 
 
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(MoveL, MoveL.from_array))
+
+
 class StopJ(Command):
     """Represents StopJ UR5 command.
 
@@ -322,6 +339,16 @@ class StopJ(Command):
     def __repr__(self):
         return 'stopj(a={})'.format(self.a)
 
+
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(StopJ, StopJ.from_array))
+
+
+class UnlockPStop(Command):
+    def __init__(self):
+        super().__init__()
+
+
+COMMAND_LIST.append(SharedBufferSerializer.CommandEntry(UnlockPStop, UnlockPStop.from_array))
 
 ZERO_THRESH = 0.00000001;
 

@@ -10,6 +10,7 @@ import numpy as np
 import sys
 import time
 
+from senseact.devices.ur.ur_utils import MoveJ, ServoJ, SpeedJ, UnlockPStop
 from senseact import utils
 from senseact.devices.ur import ur_utils
 from senseact.devices.ur.ur_setups import setups
@@ -266,34 +267,38 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._action_ = self._rand_obj_.uniform(self._action_low, self._action_high)
 
         # TODO: serializer should be something that is passed in I think
-        self.serializer = SharedBufferSerializer()
+        self.serializer = SharedBufferSerializer(ur_utils.COMMAND_LIST)
 
         # Defining packet structure for quickly building actions
-        self._reset_packet = np.ones(
-            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
-        self._reset_packet[0] = ur_utils.COMMANDS['MOVEJ']['id']
-        self._reset_packet[1:1 + 6] = self._q_ref
-        self._reset_packet[-2] = movej_t
+        self._reset_command = MoveJ(q=self._q_ref, t=movej_t)
+        # self._reset_packet = np.ones(
+        #     self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        # self._reset_packet[0] = ur_utils.COMMANDS['MOVEJ']['id']
+        # self._reset_packet[1:1 + 6] = self._q_ref
+        # self._reset_packet[-2] = movej_t
 
-        self._servoj_packet = np.ones(
-            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
-        self._servoj_packet[0] = ur_utils.COMMANDS['SERVOJ']['id']
-        self._servoj_packet[1:1 + 6] = self._q_ref
-        self._servoj_packet[-3] = servoj_t
-        self._servoj_packet[-1] = servoj_gain
+        self._servoj_command = ServoJ(q=self._q_ref, t=servoj_t, gain=servoj_gain)
+        # self._servoj_packet = np.ones(
+        #     self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        # self._servoj_packet[0] = ur_utils.COMMANDS['SERVOJ']['id']
+        # self._servoj_packet[1:1 + 6] = self._q_ref
+        # self._servoj_packet[-3] = servoj_t
+        # self._servoj_packet[-1] = servoj_gain
 
-        self._speedj_packet = np.ones(
-            self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
-        self._speedj_packet[0] = ur_utils.COMMANDS['SPEEDJ']['id']
-        self._speedj_packet[1:1 + 6] = np.zeros((6,))
-        self._speedj_packet[-2] = speedj_a
-        self._speedj_packet[-1] = speedj_t_min
+        self._speedj_command = SpeedJ(qd=np.zeros((6,)), a=speedj_a, t_min=speedj_t_min)
+        # self._speedj_packet = np.ones(
+        #     self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        # self._speedj_packet[0] = ur_utils.COMMANDS['SPEEDJ']['id']
+        # self._speedj_packet[1:1 + 6] = np.zeros((6,))
+        # self._speedj_packet[-2] = speedj_a
+        # self._speedj_packet[-1] = speedj_t_min
 
         # Tell the arm to do nothing (overwritting previous command)
         self._nothing_packet = np.zeros(self._actuator_comms[self._actuator_name].actuator_buffer.array_len)
 
-        self._pstop_unlock_packet = np.zeros(self._actuator_comms[self._actuator_name].actuator_buffer.array_len)
-        self._pstop_unlock_packet[0] = ur_utils.COMMANDS['UNLOCK_PSTOP']['id']
+        self._pstop_command = UnlockPStop()
+        # self._pstop_unlock_packet = np.zeros(self._actuator_comms[self._actuator_name].actuator_buffer.array_len)
+        # self._pstop_unlock_packet[0] = ur_utils.COMMANDS['UNLOCK_PSTOP']['id']
 
         # self.info['reward_dist'] = 0
         # self.info['reward_vel'] = 0
@@ -341,9 +346,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
     def _reset_arm(self, reset_angles):
         """Sends reset packet to communicator and sleeps until executed."""
-        self._reset_packet[1:1 + 6][self._joint_indices] = reset_angles
-        self._actuator_comms[self._actuator_name].actuator_buffer.write(self._reset_packet)
-        time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
+        self._reset_command.q[self._joint_indices] = reset_angles
+        self._actuator_comms[self._actuator_name].actuator_buffer.write(self.serializer.marshall(self._reset_command))
+        time.sleep(max(self._reset_command.t * 1.5, 2.0))
 
     def _compute_sensation_(self, name, sensor_window, timestamp_window, index_window):
         """Creates and saves an observation vector based on sensory data.
@@ -445,7 +450,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                         sys.exit(1)
             elif time.time() > self._pstop_time_ + self._clear_pstop_after:  # XXX
                 print("Unlocking p-stop")
-                self._actuation_packet_[self._actuator_name] = self._pstop_unlock_packet
+                self._actuation_packet_[self._actuator_name] = self._pstop_command
                 return
             self._actuation_packet_[self._actuator_name] = self._nothing_packet
             return
@@ -475,22 +480,26 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._cmd_ = direct_prev + increment * self.dt
         if self._control_type == 'position':
             self._cmd_ = np.clip(self._cmd_, self._angles_low, self._angles_high)
-            self._servoj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_[self._actuator_name] = self._servoj_packet
+            self._servoj_command.q[self._joint_indices] = self._cmd_
+            # self._servoj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+            self._actuation_packet_[self._actuator_name] = self._servoj_command
         elif self._control_type == 'velocity':
             self._cmd_ = np.clip(self._cmd_, self._speed_low, self._speed_high)
             self._cmd_prev_ = self._cmd_
-            self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_[self._actuator_name] = self._speedj_packet
+            self._speedj_command.q[self._joint_indices] = self._cmd_
+            # self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+            self._actuation_packet_[self._actuator_name] = self._speedj_command
         elif self._control_type == 'acceleration':
             old_cmd = self._cmd_
             self._cmd_ = np.clip(self._cmd_, self._accel_low, self._accel_high)
             self._cmd_prev_ = self._cmd_.copy()
             self._cmd_, self._accel_val_ = self._accel_to_speedj(self._cmd_)
             self._cmd_ = np.clip(self._cmd_, self._speed_low, self._speed_high)
-            self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._speedj_packet[-2] = self._accel_val_
-            self._actuation_packet_[self._actuator_name] = self._speedj_packet
+            self._speedj_command[self._joint_indices] = self._cmd_
+            # self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+            self._speedj_command.a = self._accel_val_
+            # self._speedj_packet[-2] = self._accel_val_
+            self._actuation_packet_[self._actuator_name] = self._speedj_command
         if self._control_type in ["acceleration", "velocity"]:
             self._handle_bounds_speedj()
         elif self._control_type == "position":
@@ -551,7 +560,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._cmd_ = self.return_point - self._q_[0][self._joint_indices]
         # Take the direction to return point and normalize it to have norm 0.1
         self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
-        self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+        self._speedj_command.q[self._joint_indices] = self._cmd_
+        # self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
         # This acceleration guarantees that we won't move beyond
         # the bounds by more than 0.05 radian on each joint. This
         # follows from kinematics equations.
@@ -560,8 +570,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # self.boundary_packet[1:1 + 6][self.joint_indices] = self.return_point
         # self.actuator_comms['UR5'].actuator_buffer.write(self.reset_packet)
         # time.sleep(1.0)
-        self._speedj_packet[-2] = np.clip(accel_to_apply, 2.0, 5.0)
-        self._actuation_packet_[self._actuator_name] = self._speedj_packet
+        # self._speedj_packet[-2] = np.clip(accel_to_apply, 2.0, 5.0)
+        self._speedj_command.a = np.clip(accel_to_apply, 2.0, 5.0)
+        self._actuation_packet_[self._actuator_name] = self._speedj_command
         self._cmd_.fill(0.0)
         self._cmd_prev_.fill(0.0)
         self._first_deriv_.fill(0.0)
@@ -607,7 +618,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._cmd_ = self.return_point - self._q_[0][self._joint_indices]
             # Take the direction to return point and normalize it to have norm 0.1
             self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
-            self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+            self._speedj_command.q[self._joint_indices] = self._cmd_
+            # self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             # This acceleration guarantees that we won't move beyond
             # the bounds by more than 0.05 radian on each joint. This
             # follows from kinematics equations.
@@ -617,7 +629,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             # self.actuator_comms['UR5'].actuator_buffer.write(self.reset_packet)
             # time.sleep(1.0)
             self._speedj_packet[-2] = np.clip(accel_to_apply, 2.0, 5.0)
-            self._actuation_packet_[self._actuator_name] = self._speedj_packet
+            self._speedj_command.a = np.clip(accel_to_apply, 2.0, 5.0)
+            self._actuation_packet_[self._actuator_name] = self._speedj_command
             self._cmd_.fill(0.0)
             self._cmd_prev_.fill(0.0)
             self._first_deriv_.fill(0.0)
@@ -634,8 +647,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 print("outside of angle bound on joints %r" % (list(affected_joints[0])))
                 self.angle_return_point = True
             self._cmd_[affected_joints] = np.sign(clipped_pos - cur_pos)[affected_joints] * np.max(np.abs(self._cmd_))
-            self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_[self._actuator_name] = self._speedj_packet
+            self._speedj_command.q[self._joint_indices] = self._cmd_
+            # self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
+            self._actuation_packet_[self._actuator_name] = self._speedj_command
 
     def _accel_to_speedj(self, accel_vec):
         """Converts accelj command to speedj command.

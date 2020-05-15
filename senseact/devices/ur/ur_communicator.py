@@ -6,9 +6,11 @@
 import socket
 import time
 import numpy as np
+
+from devices.ur.ur_utils import ServoJ, SpeedJ, MoveL
 from senseact.communicator import Communicator
 from senseact.devices.ur import ur_utils
-from senseact.sharedbuffer import SharedBuffer
+from senseact.sharedbuffer import SharedBuffer, SharedBufferSerializer
 from threading import Lock
 
 
@@ -54,6 +56,7 @@ class URCommunicator(Communicator):
         self._num_reads = 0
         self._num_read_lock = Lock()
 
+        self.serializer = SharedBufferSerializer(ur_utils.COMMAND_LIST)
         self._buffer_len = buffer_len
         if buffer_len is None:
             self._buffer_len = SharedBuffer.DEFAULT_BUFFER_LEN
@@ -194,45 +197,52 @@ class URCommunicator(Communicator):
             self._num_read_lock.release()
             recent_actuation, time_stamp, _ = self.actuator_buffer.read_update()
             recent_actuation = recent_actuation[0]
-            if recent_actuation[0] == ur_utils.COMMANDS['SERVOJ']['id']:
-                servoj_values = ur_utils.COMMANDS['SERVOJ']
-                cmd = ur_utils.ServoJ(
-                    q=recent_actuation[1:1 + servoj_values['size'] - 3],
-                    t=servoj_values['default']['t']
-                    if recent_actuation[-3] == ur_utils.USE_DEFAULT else recent_actuation[-3],
-                    lookahead_time=servoj_values['default']['lookahead_time']
-                    if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
-                    gain=servoj_values['default']['gain']
-                    if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1]
-                )
-            elif recent_actuation[0] == ur_utils.COMMANDS['SPEEDJ']['id']:
+            cmd = self.serializer.demarshall(recent_actuation)
+
+            # if recent_actuation[0] == ur_utils.COMMANDS['SERVOJ']['id']:
+            if type(cmd) == ServoJ:
+                pass
+                # servoj_values = ur_utils.COMMANDS['SERVOJ']
+                # cmd = ur_utils.ServoJ(
+                #     q=recent_actuation[1:1 + servoj_values['size'] - 3],
+                #     t=servoj_values['default']['t']
+                #     if recent_actuation[-3] == ur_utils.USE_DEFAULT else recent_actuation[-3],
+                #     lookahead_time=servoj_values['default']['lookahead_time']
+                #     if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
+                #     gain=servoj_values['default']['gain']
+                #     if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1]
+                # )
+            # elif recent_actuation[0] == ur_utils.COMMANDS['SPEEDJ']['id']:
+            elif type(cmd) == SpeedJ:
                 if time.time() - time_stamp[-1] > self._speedj_timeout:
                     return
-                speedj_values = ur_utils.COMMANDS['SPEEDJ']
-                cmd = ur_utils.SpeedJ(
-                    qd=recent_actuation[1:1 + speedj_values['size'] - 2],
-                    a=speedj_values['default']['a']
-                    if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
-                    t_min=speedj_values['default']['t_min']
-                    if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
-                )
+                # speedj_values = ur_utils.COMMANDS['SPEEDJ']
+                # cmd = ur_utils.SpeedJ(
+                #     qd=recent_actuation[1:1 + speedj_values['size'] - 2],
+                #     a=speedj_values['default']['a']
+                #     if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
+                #     t_min=speedj_values['default']['t_min']
+                #     if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
+                # )
             elif not updated:
                 # The commands below this point should only be executed
                 # if they are new actuations
                 return
-            elif recent_actuation[0] == ur_utils.COMMANDS['MOVEL']['id']:
-                movel_values = ur_utils.COMMANDS['MOVEL']
-                cmd = ur_utils.MoveL(
-                    pose=recent_actuation[1:1 + movel_values['size'] - 4],
-                    a=movel_values['default']['a']
-                    if recent_actuation[-4] == ur_utils.USE_DEFAULT else recent_actuation[-4],
-                    v=movel_values['default']['v']
-                    if recent_actuation[-3] == ur_utils.USE_DEFAULT else recent_actuation[-3],
-                    t=movel_values['default']['t']
-                    if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
-                    r=movel_values['default']['r']
-                    if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
-                )
+            # elif recent_actuation[0] == ur_utils.COMMANDS['MOVEL']['id']:
+            elif type(cmd) == MoveL:
+                pass
+                # movel_values = ur_utils.COMMANDS['MOVEL']
+                # cmd = ur_utils.MoveL(
+                #     pose=recent_actuation[1:1 + movel_values['size'] - 4],
+                #     a=movel_values['default']['a']
+                #     if recent_actuation[-4] == ur_utils.USE_DEFAULT else recent_actuation[-4],
+                #     v=movel_values['default']['v']
+                #     if recent_actuation[-3] == ur_utils.USE_DEFAULT else recent_actuation[-3],
+                #     t=movel_values['default']['t']
+                #     if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
+                #     r=movel_values['default']['r']
+                #     if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
+                # )
             elif recent_actuation[0] == ur_utils.COMMANDS['MOVEJ']['id']:
                 movej_values = ur_utils.COMMANDS['MOVEJ']
                 cmd = ur_utils.MoveJ(

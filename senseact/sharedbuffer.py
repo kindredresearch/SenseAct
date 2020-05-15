@@ -211,29 +211,53 @@ class Command:
 
 
 class SharedBufferSerializer:
+    class CommandEntry:
+        def __init__(self, command_type, factory):
+            self.command_type = command_type
+            self.factory = factory
+
     def __init__(self, commands: list):
         """
-
-        :param dictionary: A mapping
+        :param commands: Each list entry should contain (class type, factory method)
         """
         self.commands = list(commands)
-        self.dictionary = {word: idx for idx, word in enumerate(self.commands)}
+        self.dictionary = {}
+        for idx, command in enumerate(commands):
+            if type(command) is tuple or type(command) is list:
+                SharedBufferSerializer.CommandEntry(*command)
+            elif type(command) is SharedBufferSerializer.CommandEntry:
+                self.dictionary[command.command_type] = idx
+            else:
+                raise ValueError("Invalid Command argument")
 
-    def marshall(self, object: Command) -> np.ndarray:
-        if type(object) not in self.dictionary:
+    def marshall(self, command: Command) -> np.ndarray:
+        """
+        When an object is marshalled its index in the commands list is looked up by its type. This index
+        is then written as the first entry in serialization array. The commands to_array method is then called
+        and the result is added to the buffer entry.
+        
+        :param command: The command to be serialized
+        """
+        if type(command) not in self.dictionary:
             raise ValueError
 
-        out = [self.dictionary[type(object)]]
-        out.extend(object.to_array)
+        out = [self.dictionary[type(command)]]
+        out.extend(command.to_array)
         return np.array(out)
 
     def demarshall(self, nparray: np.ndarray) -> object:
+        """
+        The first entry in the nparray indicates the class of object to be instantiated.
+        This is an index into self.commands.
+        The corresponding CommandEntry is fetched from the list and the factory method is called
+        with the remainder of the buffer.
+        :param nparray:
+        :return:
+        """
         cmd_idx = nparray[0]
         if cmd_idx < 0 or cmd_idx >= len(self.commands):
             raise ValueError
 
         clz = self.commands[cmd_idx]
-        instance = clz()
-        for idx, key in enumerate(sorted(instance.__dict__.keys())):
-            setattr(instance, key, nparray[idx + 1])
+        instance = clz.factory(nparray[1:])
         return instance
