@@ -37,7 +37,7 @@ def main(port: str, id: int, baud: int, use_pyserial: bool):
                 "baudrate": baud,
                 "sensor_dt": 0.01,
                 "device_path": port,
-                "use_ctypes_driver": use_pyserial
+                "use_ctypes_driver": not use_pyserial
             }
         }
     }
