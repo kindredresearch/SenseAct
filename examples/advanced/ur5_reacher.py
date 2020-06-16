@@ -12,6 +12,8 @@ import baselines.common.tf_util as U
 from multiprocessing import Process, Value, Manager
 from baselines.trpo_mpi.trpo_mpi import learn
 from baselines.ppo1.mlp_policy import MlpPolicy
+from senseact.sharedbuffer import SharedBuffer
+from senseact.devices.ur.ur_communicator import URCommunicator
 
 from senseact.envs.ur.reacher_env import ReacherEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
@@ -23,42 +25,59 @@ def main(ip):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
-    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+    tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
+
+    comm_name = "UR5"
+    obs_history = 1
+    communicator_setups = {comm_name:
+        {
+            'Communicator': URCommunicator,
+            'num_sensor_packets': obs_history,
+
+            'kwargs': {'host': ip,
+                       'actuation_sync_period': 1,
+                       'buffer_len': obs_history + SharedBuffer.DEFAULT_BUFFER_LEN,
+                       }
+        }
+    }
 
     # Create UR5 Reacher2D environment
     env = ReacherEnv(
-            setup="UR5_default",
-            host=ip,
-            dof=2,
-            control_type="velocity",
-            target_type="position",
-            reset_type="zero",
-            reward_type="precision",
-            derivative_type="none",
-            deriv_action_max=5,
-            first_deriv_max=2,
-            accel_max=1.4,
-            speed_max=0.3,
-            speedj_a=1.4,
-            episode_length_time=4.0,
-            episode_length_step=None,
-            actuation_sync_period=1,
-            dt=0.04,
-            run_mode="multiprocess",
-            rllab_box=False,
-            movej_t=2.0,
-            delay=0.0,
-            random_state=rand_state
-        )
+        setup="UR5_default",
+        communicator_setups=communicator_setups,
+        actuator_name=comm_name,
+        sensor_hame=comm_name,
+        dof=2,
+        control_type="velocity",
+        target_type="position",
+        reset_type="zero",
+        reward_type="precision",
+        derivative_type="none",
+        deriv_action_max=5,
+        first_deriv_max=2,
+        obs_history=obs_history,
+        accel_max=1.4,
+        speed_max=0.3,
+        speedj_a=1.4,
+        episode_length_time=4.0,
+        episode_length_step=None,
+        actuation_sync_period=1,
+        dt=0.04,
+        run_mode="multiprocess",
+        rllab_box=False,
+        movej_t=2.0,
+        random_state=rand_state
+    )
     env = NormalizedEnv(env)
     # Start environment processes
     env.start()
     # Create baselines TRPO policy function
     sess = U.single_threaded_session()
     sess.__enter__()
+
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-            hid_size=32, num_hid_layers=2)
+                         hid_size=32, num_hid_layers=2)
 
     # Create and start plotting process
     plot_running = Value('i', 1)
@@ -104,7 +123,7 @@ def plot_ur5_reacher(env, batch_size, shared_returns, plot_running):
         plot_running: A multiprocessing Value object containing 0/1.
             1: Continue plotting, 0: Terminate plotting loop
     """
-    print ("Started plotting routine")
+    print("Started plotting routine")
     import matplotlib.pyplot as plt
     plt.ion()
     time.sleep(5.0)
@@ -150,7 +169,7 @@ def plot_ur5_reacher(env, batch_size, shared_returns, plot_running):
         # make a copy of the whole dict to avoid episode_returns and episodic_lengths getting desync
         # while plotting
         copied_returns = copy.deepcopy(shared_returns)
-        if not copied_returns['write_lock'] and  len(copied_returns['episodic_returns']) > old_size:
+        if not copied_returns['write_lock'] and len(copied_returns['episodic_returns']) > old_size:
             # plot learning curve
             returns = np.array(copied_returns['episodic_returns'])
             old_size = len(copied_returns['episodic_returns'])

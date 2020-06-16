@@ -86,6 +86,10 @@ class DXLCommunicator(Communicator):
         self.max_actuation_time = 1
         self.torque = 0
 
+    def get_register_names(self):
+        read_block = dxl_mx64.MX64.subblock('version_0', 'goal_acceleration', ret_dxl_type=True)
+        return [reg.name for reg in read_block]
+
     def run(self):
         """ Override base class run method to setup dxl driver.
 

@@ -15,26 +15,45 @@ from baselines.ppo1.mlp_policy import MlpPolicy
 from baselines.trpo_mpi.trpo_mpi import learn
 from helper import create_callback
 
+from senseact.devices.dxl import dxl_communicator as gcomm
 from senseact.envs.dxl.dxl_reacher_env import DxlReacher1DEnv
 from senseact.utils import tf_set_seeds, NormalizedEnv
 
-import glob
 
+def main(port: str, id: int, baud: int, use_pyserial: bool):
+    tag = str(time.time())
 
-def main(port, id, baud):
     # use fixed random state
     rand_state = np.random.RandomState(1).get_state()
     np.random.set_state(rand_state)
-    tf_set_seeds(np.random.randint(1, 2**31 - 1))
+    tf_set_seeds(np.random.randint(1, 2 ** 31 - 1))
+
+    cycle_time = 0.04
+    obs_history = 1
+    comm_name = "DXL"
+    sensor_dt = 0.01
+    communicator_setups = {
+        comm_name: {
+            'Communicator': gcomm.DXLCommunicator,
+            'num_sensor_packets': obs_history,
+            'kwargs': {
+                "idn": id,
+                "baudrate": baud,
+                "sensor_dt": sensor_dt,
+                "device_path": port,
+                "use_ctypes_driver": not use_pyserial
+            }
+        }
+    }
 
     # Create DXL Reacher1D environment
     env = DxlReacher1DEnv(setup='dxl_gripper_default',
-                          dxl_dev_path=port,
-                          idn=id,
-                          baudrate=baud,
-                          obs_history=1,
-                          dt=0.04,
-                          gripper_dt=0.01,
+                          communicator_setups=communicator_setups,
+                          actuator_name=comm_name,
+                          sensor_name=comm_name,
+                          obs_history=obs_history,
+                          dt=cycle_time,
+                          sensor_dt=sensor_dt,
                           rllab_box=False,
                           episode_length_step=None,
                           episode_length_time=2,
@@ -43,7 +62,6 @@ def main(port, id, baud):
                           target_type='position',
                           reset_type='zero',
                           reward_type='linear',
-                          use_ctypes_driver=True,
                           random_state=rand_state
                           )
 
@@ -69,7 +87,7 @@ def main(port, id, baud):
                                      "episodic_returns": [],
                                      "episodic_lengths": [], })
     # Plotting process
-    pp = Process(target=plot_dxl_reacher, args=(env, 2048, shared_returns, plot_running))
+    pp = Process(target=plot_dxl_reacher, args=(tag, env, 2048, shared_returns, plot_running))
     pp.start()
 
     # Create callback function for logging data from baselines TRPO learn
@@ -98,7 +116,7 @@ def main(port, id, baud):
     env.close()
 
 
-def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
+def plot_dxl_reacher(tag, env, batch_size, shared_returns, plot_running):
     """ Visualizes the DXL reacher task and plots episodic returns
 
     Args:
@@ -167,11 +185,16 @@ def plot_dxl_reacher(env, batch_size, shared_returns, plot_running):
                 hl11.set_xdata(np.arange(1, len(rets) + 1) * x_tick)
                 ax2.set_xlim([x_tick, len(rets) * x_tick])
                 hl11.set_ydata(rets)
-                ax2.set_ylim([np.min(rets), np.max(rets) + 50])
+                buffer = abs(np.max(rets) - np.min(rets)) * 0.05
+                ax2.set_ylim([np.min(rets) - buffer, np.max(rets) + buffer])
         time.sleep(0.01)
         fig.canvas.draw()
         fig.canvas.flush_events()
         count += 1
+
+    # Save just the portion _inside_ the second axis's boundaries
+    extent = ax2.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig('{}.png'.format(tag), bbox_inches=extent.expanded(1.1, 1.1))
 
 
 if __name__ == '__main__':
@@ -179,6 +202,7 @@ if __name__ == '__main__':
     parser.add_argument("--port", type=str, default=None)
     parser.add_argument("--id", type=int, default=1)
     parser.add_argument("--baud", type=int, default=1000000)
+    parser.add_argument("--use_pyserial", action="store_true", default=False)
     args = parser.parse_args()
 
     main(**args.__dict__)

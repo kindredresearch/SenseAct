@@ -32,7 +32,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
     def __init__(self,
                  setup,
-                 host=None,
+                 communicator_setups,
+                 actuator_name,
+                 sensor_hame,
                  dof=6,
                  control_type='position',
                  derivative_type='none',
@@ -43,7 +45,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                  first_deriv_max=10,  # used only with second derivative control
                  vel_penalty=0,
                  obs_history=1,
-                 actuation_sync_period=1,
                  episode_length_time=None,
                  episode_length_step=None,
                  rllab_box=False,
@@ -55,7 +56,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                  accel_max=None,
                  speed_max=None,
                  dt=0.008,
-                 delay=0.0,  # to simulate extra delay in the system
                  start_timeout=None,
                  **kwargs):
         """Inits ReacherEnv class with task and robot specific parameters.
@@ -88,9 +88,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 penalty term in the reward function.
             obs_history: an integer number of sensory packets concatenated
                 into a single observation vector
-            actuation_sync_period: a bool specifying whether to synchronize
-                sending actuation commands to UR5 with receiving sensory
-                packets from UR5 (must be true for smooth UR5 operation).
             episode_length_time: a float duration of an episode defined
                 in seconds
             episode_length_step: an integer duration of en episode
@@ -114,7 +111,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 If None, a value from setup is used.
             dt: a float specifying duration of an environment time step
                 in seconds.
-            delay: a float specifying artificial observation delay in seconds
             start_timeout: The amount of time (in seconds) to wait for all communicators to start.
                             If set to None (default) the longest timeout values set by each communicator will be used. If set to
                             -1 then the environment will wait indefinitely. If set >= 0 then the timeout value provided will
@@ -127,7 +123,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         assert derivative_type in ['none', 'first', 'second']
         assert target_type in ['position', 'angle']
         assert reset_type in ['random', 'zero', 'none']
-        assert actuation_sync_period >= 0
 
         if episode_length_step is not None:
             assert episode_length_time is None
@@ -143,7 +138,8 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             raise AssertionError
 
         # Task Parameters
-        self._host = setups[setup]['host'] if host is None else host
+        self._actuator_name = actuator_name
+        self._sensor_name = sensor_hame
         self._obs_history = obs_history
         self._dof = dof
         self._control_type = control_type
@@ -154,7 +150,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._vel_penalty = vel_penalty  # weight of the velocity penalty
         self._deriv_action_max = deriv_action_max
         self._first_deriv_max = first_deriv_max
-        self._delay = delay
         if accel_max == None:
             accel_max = setups[setup]['accel_max']
         if speed_max == None:
@@ -259,24 +254,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # Only used with second derivative control
         self._first_deriv_ = np.zeros(len(self.action_space.low))
 
-        # Communicator Parameters
-        communicator_setups = {'UR5':
-            {
-                'num_sensor_packets': obs_history,
-
-                'kwargs': {'host': self._host,
-                           'actuation_sync_period': actuation_sync_period,
-                           'buffer_len': obs_history + SharedBuffer.DEFAULT_BUFFER_LEN,
-                           }
-            }
-        }
-        if self._delay > 0:
-            from senseact.devices.ur.ur_communicator_delay import URCommunicator
-            communicator_setups['UR5']['kwargs']['delay'] = self._delay
-        else:
-            from senseact.devices.ur.ur_communicator import URCommunicator
-        communicator_setups['UR5']['Communicator'] = URCommunicator
-
         super(ReacherEnv, self).__init__(communicator_setups=communicator_setups,
                                          action_dim=len(self.action_space.low),
                                          observation_dim=len(self.observation_space.low),
@@ -288,27 +265,27 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._action_ = self._rand_obj_.uniform(self._action_low, self._action_high)
 
         # Defining packet structure for quickly building actions
-        self._reset_packet = np.ones(self._actuator_comms['UR5'].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._reset_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._reset_packet[0] = ur_utils.COMMANDS['MOVEJ']['id']
         self._reset_packet[1:1 + 6] = self._q_ref
         self._reset_packet[-2] = movej_t
 
-        self._servoj_packet = np.ones(self._actuator_comms['UR5'].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._servoj_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._servoj_packet[0] = ur_utils.COMMANDS['SERVOJ']['id']
         self._servoj_packet[1:1 + 6] = self._q_ref
         self._servoj_packet[-3] = servoj_t
         self._servoj_packet[-1] = servoj_gain
 
-        self._speedj_packet = np.ones(self._actuator_comms['UR5'].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
+        self._speedj_packet = np.ones(self._actuator_comms[self._actuator_name].actuator_buffer.array_len) * ur_utils.USE_DEFAULT
         self._speedj_packet[0] = ur_utils.COMMANDS['SPEEDJ']['id']
         self._speedj_packet[1:1 + 6] = np.zeros((6,))
         self._speedj_packet[-2] = speedj_a
         self._speedj_packet[-1] = speedj_t_min
 
         # Tell the arm to do nothing (overwritting previous command)
-        self._nothing_packet = np.zeros(self._actuator_comms['UR5'].actuator_buffer.array_len)
+        self._nothing_packet = np.zeros(self._actuator_comms[self._actuator_name].actuator_buffer.array_len)
 
-        self._pstop_unlock_packet = np.zeros(self._actuator_comms['UR5'].actuator_buffer.array_len)
+        self._pstop_unlock_packet = np.zeros(self._actuator_comms[self._actuator_name].actuator_buffer.array_len)
         self._pstop_unlock_packet[0] = ur_utils.COMMANDS['UNLOCK_PSTOP']['id']
 
         # self.info['reward_dist'] = 0
@@ -358,7 +335,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
     def _reset_arm(self, reset_angles):
         """Sends reset packet to communicator and sleeps until executed."""
         self._reset_packet[1:1 + 6][self._joint_indices] = reset_angles
-        self._actuator_comms['UR5'].actuator_buffer.write(self._reset_packet)
+        self._actuator_comms[self._actuator_name].actuator_buffer.write(self._reset_packet)
         time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
 
     def _compute_sensation_(self, name, sensor_window, timestamp_window, index_window):
@@ -461,9 +438,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                         sys.exit(1)
             elif time.time() > self._pstop_time_ + self._clear_pstop_after:  # XXX
                 print("Unlocking p-stop")
-                self._actuation_packet_['UR5'] = self._pstop_unlock_packet
+                self._actuation_packet_[self._actuator_name] = self._pstop_unlock_packet
                 return
-            self._actuation_packet_['UR5'] = self._nothing_packet
+            self._actuation_packet_[self._actuator_name] = self._nothing_packet
             return
         else:
             print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
@@ -492,12 +469,12 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         if self._control_type == 'position':
             self._cmd_ = np.clip(self._cmd_, self._angles_low, self._angles_high)
             self._servoj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_['UR5'] = self._servoj_packet
+            self._actuation_packet_[self._actuator_name] = self._servoj_packet
         elif self._control_type == 'velocity':
             self._cmd_ = np.clip(self._cmd_, self._speed_low, self._speed_high)
             self._cmd_prev_ = self._cmd_
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_['UR5'] = self._speedj_packet
+            self._actuation_packet_[self._actuator_name] = self._speedj_packet
         elif self._control_type == 'acceleration':
             old_cmd = self._cmd_
             self._cmd_ = np.clip(self._cmd_, self._accel_low, self._accel_high)
@@ -506,7 +483,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             self._cmd_ = np.clip(self._cmd_, self._speed_low, self._speed_high)
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             self._speedj_packet[-2] = self._accel_val_
-            self._actuation_packet_['UR5'] = self._speedj_packet
+            self._actuation_packet_[self._actuator_name] = self._speedj_packet
         if self._control_type in ["acceleration", "velocity"]:
             self._handle_bounds_speedj()
         elif self._control_type == "position":
@@ -577,7 +554,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         # self.actuator_comms['UR5'].actuator_buffer.write(self.reset_packet)
         # time.sleep(1.0)
         self._speedj_packet[-2] = np.clip(accel_to_apply, 2.0, 5.0)
-        self._actuation_packet_['UR5'] = self._speedj_packet
+        self._actuation_packet_[self._actuator_name] = self._speedj_packet
         self._cmd_.fill(0.0)
         self._cmd_prev_.fill(0.0)
         self._first_deriv_.fill(0.0)
@@ -633,7 +610,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
             # self.actuator_comms['UR5'].actuator_buffer.write(self.reset_packet)
             # time.sleep(1.0)
             self._speedj_packet[-2] = np.clip(accel_to_apply, 2.0, 5.0)
-            self._actuation_packet_['UR5'] = self._speedj_packet
+            self._actuation_packet_[self._actuator_name] = self._speedj_packet
             self._cmd_.fill(0.0)
             self._cmd_prev_.fill(0.0)
             self._first_deriv_.fill(0.0)
@@ -651,7 +628,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 self.angle_return_point = True
             self._cmd_[affected_joints] = np.sign(clipped_pos - cur_pos)[affected_joints] * np.max(np.abs(self._cmd_))
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
-            self._actuation_packet_['UR5'] = self._speedj_packet
+            self._actuation_packet_[self._actuator_name] = self._speedj_packet
 
     def _accel_to_speedj(self, accel_vec):
         """Converts accelj command to speedj command.
@@ -741,7 +718,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         """
         self._episode_steps += 1
         if (self._episode_steps >= self._episode_length_step) or env_done:
-            self._actuator_comms['UR5'].actuator_buffer.write(self._nothing_packet)
+            self._actuator_comms[self._actuator_name].actuator_buffer.write(self._nothing_packet)
             return True
         else:
             return False
