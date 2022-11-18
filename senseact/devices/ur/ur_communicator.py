@@ -30,7 +30,8 @@ class URCommunicator(Communicator):
                  actuation_sync_period=True,
                  disable_nagle_algorithm=True,
                  speedj_timeout = 0.5,
-                 buffer_len=None
+                 buffer_len=None,
+                 stopj_a=3.0
                  ):
         """Inits URCommunicator class with device- and task-specific parameters.
 
@@ -47,6 +48,7 @@ class URCommunicator(Communicator):
         self._disable_nagle_algorithm = disable_nagle_algorithm
         self._actuation_sync_period = actuation_sync_period
         self._speedj_timeout = speedj_timeout
+        self._stopj_a = stopj_a
 
         # The number of sensor reads since the last actuator write
         self._num_reads = 0
@@ -204,15 +206,16 @@ class URCommunicator(Communicator):
                 )
             elif recent_actuation[0] == ur_utils.COMMANDS['SPEEDJ']['id']:
                 if time.time() - time_stamp[-1] > self._speedj_timeout:
-                    return
-                speedj_values = ur_utils.COMMANDS['SPEEDJ']
-                cmd = ur_utils.SpeedJ(
-                    qd=recent_actuation[1:1 + speedj_values['size'] - 2],
-                    a=speedj_values['default']['a']
-                    if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
-                    t_min=speedj_values['default']['t_min']
-                    if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
-                )
+                    cmd = ur_utils.StopJ(a=self._stopj_a)
+                else:
+                    speedj_values = ur_utils.COMMANDS['SPEEDJ']
+                    cmd = ur_utils.SpeedJ(
+                        qd=recent_actuation[1:1 + speedj_values['size'] - 2],
+                        a=speedj_values['default']['a']
+                        if recent_actuation[-2] == ur_utils.USE_DEFAULT else recent_actuation[-2],
+                        t_min=speedj_values['default']['t_min']
+                        if recent_actuation[-1] == ur_utils.USE_DEFAULT else recent_actuation[-1],
+                    )
             elif not updated:
                 # The commands below this point should only be executed
                 # if they are new actuations

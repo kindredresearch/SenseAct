@@ -150,7 +150,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._vel_penalty = vel_penalty # weight of the velocity penalty
         self._deriv_action_max = deriv_action_max
         self._first_deriv_max = first_deriv_max
+        self._speedj_a = speedj_a
         self._delay = delay
+        self.return_point = None
         if accel_max==None:
             accel_max = setups[setup]['accel_max']
         if speed_max==None:
@@ -301,6 +303,10 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._speedj_packet[-2] = speedj_a
         self._speedj_packet[-1] = speedj_t_min
 
+        self._stopj_packet = np.zeros(self._actuator_comms['UR5'].actuator_buffer.array_len)
+        self._stopj_packet[0] = ur_utils.COMMANDS['STOPJ']['id']
+        self._stopj_packet[1] = 2.0
+
         # Tell the arm to do nothing (overwritting previous command)
         self._nothing_packet = np.zeros(self._actuator_comms['UR5'].actuator_buffer.array_len)
 
@@ -354,6 +360,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
     def _reset_arm(self, reset_angles):
         """Sends reset packet to communicator and sleeps until executed."""
+        self._actuator_comms['UR5'].actuator_buffer.write(self._stopj_packet)
+        time.sleep(0.5)
+
         self._reset_packet[1:1 + 6][self._joint_indices] = reset_angles
         self._actuator_comms['UR5'].actuator_buffer.write(self._reset_packet)
         time.sleep(max(self._reset_packet[-2] * 1.5, 2.0))
@@ -398,6 +407,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         self._mt_ = np.array([sensor_window[i]['m_target'][0] for i in range(index_start,index_end)])
         self._voltage_ = np.array([sensor_window[i]['v_actual'][0] for i in range(index_start,index_end)])
 
+
         self._safety_mode_ = np.array([sensor_window[i]['safety_mode'][0] for i in range(index_start,index_end)])
 
         #TODO: should there be checks for safety modes greater than pstop here, and exit if found?
@@ -441,9 +451,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         """
         if self._safety_mode_ == ur_utils.SafetyModes.NORMAL or \
             self._safety_mode_ == ur_utils.SafetyModes.NONE:
-                self.pstop_time = None
+                self._pstop_time_ = None
         elif self._safety_mode_ == ur_utils.SafetyModes.REDUCED:
-            self.pstop_time = None
+            self._pstop_time_ = None
         elif self._safety_mode_ == ur_utils.SafetyModes.PROTECTIVE_STOP:
             if self._pstop_time_ is None:
                 print("Encountered p-stop")
@@ -461,15 +471,13 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 print("Unlocking p-stop")
                 self._actuation_packet_['UR5'] = self._pstop_unlock_packet
                 return
-            self._actuation_packet_['UR5'] = self._nothing_packet
+            self._actuation_packet_['UR5'] = self._stopj_packet
             return
         else:
             print('Fatal UR5 error: safety_mode={}'.format(self._safety_mode_))
             self.close()
         self._action_ = action
         action = np.clip(action, self._action_low, self._action_high)
-        self.return_point = None   # a point within the box to which to return when out of box bounds
-        self.escaped_the_box = False  # whether got outside of the box
         if self._derivative_type== 'none':
             self._cmd_ = action
         else:
@@ -494,6 +502,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         elif self._control_type == 'velocity':
             self._cmd_ = np.clip(self._cmd_, self._speed_low, self._speed_high)
             self._cmd_prev_ = self._cmd_
+            self._speedj_packet[-2] = self._speedj_a
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             self._actuation_packet_['UR5'] = self._speedj_packet
         elif self._control_type == 'acceleration':
@@ -564,7 +573,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 # to recompute it at every time step
         self._cmd_ = self.return_point - self._q_[0][self._joint_indices]
         # Take the direction to return point and normalize it to have norm 0.1
-        self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
+        if np.linalg.norm(self._cmd_) != 0:
+            self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
+
         self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
         # This acceleration guarantees that we won't move beyond
         # the bounds by more than 0.05 radian on each joint. This
@@ -592,6 +603,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                              np.all(self._qt_[-1, self._joint_indices] <= self._angles_high)
         if inside_bound:
             self.return_point = None
+            self.escaped_the_box = False
         if inside_angle_bound:
             self.angle_return_point = False
         if not inside_bound:
@@ -620,7 +632,9 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 # to recompute it at every time step
             self._cmd_ = self.return_point - self._q_[0][self._joint_indices]
             # Take the direction to return point and normalize it to have norm 0.1
-            self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
+            if np.linalg.norm(self._cmd_) != 0:
+                self._cmd_ /= np.linalg.norm(self._cmd_) / 0.1
+
             self._speedj_packet[1:1 + 6][self._joint_indices] = self._cmd_
             # This acceleration guarantees that we won't move beyond
             # the bounds by more than 0.05 radian on each joint. This
@@ -739,7 +753,7 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
         """
         self._episode_steps += 1
         if (self._episode_steps >= self._episode_length_step) or env_done:
-            self._actuator_comms['UR5'].actuator_buffer.write(self._nothing_packet)
+            self._actuator_comms['UR5'].actuator_buffer.write(self._stopj_packet)
             return True
         else:
             return False
