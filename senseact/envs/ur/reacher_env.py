@@ -532,12 +532,10 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
 
         if inside_bound and inside_angle_bound:
             self.return_point = None
-            self.escaped_the_box = False
             return
 
         if self.return_point is None:
             # we are outside the bounds and return point wasn't computed yet
-            self.escaped_the_box = True
             if inside_bound and not inside_angle_bound:
                 print("outside of angle bound")
                 self.rel_indices = self._joint_indices
@@ -565,7 +563,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 else:
                     servoj_q[self._joint_indices] = solutions[0][self._joint_indices]
                 self.return_point = servoj_q[self._joint_indices]
-                self.init_boundary_speed = np.max(np.abs(self._qd_.copy()))
                 # Speed at which arm approaches the boundary. The faster this speed,
                 # the larger opposite acceleration we need to apply in order to slow down
                 self.init_boundary_speed = np.max(np.abs(self._qd_.copy()))
@@ -603,13 +600,11 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                              np.all(self._qt_[-1, self._joint_indices] <= self._angles_high)
         if inside_bound:
             self.return_point = None
-            self.escaped_the_box = False
         if inside_angle_bound:
             self.angle_return_point = False
         if not inside_bound:
             if self.return_point is None:
                 # we are outside the bounds and return point wasn't computed yet
-                self.escaped_the_box = True
                 print("outside box bound")
                 xyz = np.clip(xyz, self._end_effector_low + self._box_bound_buffer,
                               self._end_effector_high - self._box_bound_buffer)
@@ -624,7 +619,6 @@ class ReacherEnv(RTRLBaseEnv, gym.core.Env):
                 else:
                     servoj_q[self._joint_indices] = solutions[0][self._joint_indices]
                 self.return_point = servoj_q[self._joint_indices]
-                self.init_boundary_speed = np.max(np.abs(self._qd_.copy()))
                 # Speed at which arm approaches the boundary. The faster this speed,
                 # the larger opposite acceleration we need to apply in order to slow down
                 self.init_boundary_speed = np.max(np.abs(self._qd_.copy()))
