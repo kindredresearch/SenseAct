@@ -3,14 +3,14 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-import time
 import signal
-
+import time
 from math import pi
 from threading import Lock
-from senseact.sharedbuffer import SharedBuffer
+
 from senseact.communicator import Communicator
 from senseact.devices.dxl import dxl_mx64
+from senseact.sharedbuffer import SharedBuffer
 
 
 class DXLCommunicator(Communicator):
@@ -27,6 +27,7 @@ class DXLCommunicator(Communicator):
                  sensor_dt=0.006,
                  device_path='None',
                  use_ctypes_driver=True,
+                 start_timeout=1.0
                  ):
         """ Inits DXLCommunicator class with device and task-specific parameters.
 
@@ -73,16 +74,19 @@ class DXLCommunicator(Communicator):
         super(DXLCommunicator, self).__init__(use_sensor=True,
                                               use_actuator=True,
                                               sensor_args=sensor_args,
-                                              actuator_args=actuator_args)
+                                              actuator_args=actuator_args,
+                                              start_timeout=start_timeout)
 
-        self.just_read = 0
-        self.just_read_lock = Lock()
         self.port_lock = Lock()
         self.read_start_time = self.read_end_time = time.time()
         self.read_time = 0
         self.last_actuation_updated = time.time()
         self.max_actuation_time = 1
         self.torque = 0
+
+    def get_register_names(self):
+        read_block = dxl_mx64.MX64.subblock('version_0', 'goal_acceleration', ret_dxl_type=True)
+        return [reg.name for reg in read_block]
 
     def run(self):
         """ Override base class run method to setup dxl driver.
@@ -133,9 +137,6 @@ class DXLCommunicator(Communicator):
         self.port_lock.acquire()
         vals = self.dxl_driver.read_a_block_vals(self.port, self.idn, self.read_block, self.read_wait_time)
         self.port_lock.release()
-        self.just_read_lock.acquire()
-        self.just_read = 1
-        self.just_read_lock.release()
         self.sensor_buffer.write(vals)
 
     def _actuator_handler(self):
@@ -144,21 +145,13 @@ class DXLCommunicator(Communicator):
         Only torque control allowed now. We send zero torque
         (i.e., stopping movements) if there is a delay in actuation.
         """
-        if time.time() - self.last_actuation_updated > self.max_actuation_time:
-            self.torque = 0
-        self.just_read_lock.acquire()
-        if self.just_read == 1:
-            self.just_read = 0
-            self.just_read_lock.release()
-        else:
-            self.just_read_lock.release()
-            time.sleep(0.0001)
-            return
         if self.actuator_buffer.updated():
             self.last_actuation_updated = time.time()
             recent_actuation, _, _ = self.actuator_buffer.read_update()
             self.torque = recent_actuation[0]
-        self.write_torque(self.torque)
+            self.write_torque(self.torque)
+        elif time.time() - self.last_actuation_updated > self.max_actuation_time:
+            self.write_torque(0)
 
     def write_torque(self, torque):
         """ Writes goal torque commands to the DXL control table.
